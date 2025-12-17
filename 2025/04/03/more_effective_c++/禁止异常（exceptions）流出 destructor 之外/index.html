@@ -1,0 +1,278 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>条款11：禁止异常（exceptions）流出 destructor 之外 | GYu的妙妙屋</title><meta name="author" content="NeverGYu"><meta name="copyright" content="NeverGYu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="1️⃣ destructor 函数的调用时机 对象正常状态下被销毁，也就是当它离开了它的作用域（scope）或是被明确地删除。 当对象被exception处理机制销毁——也就是exception传播过程中的（stack-unwinding）机制。  2️⃣ 理由一 有个exception正撰写你的destructor。因为如果控制权基于exception的因素离开destructor，而此时正有另">
+<meta property="og:type" content="article">
+<meta property="og:title" content="条款11：禁止异常（exceptions）流出 destructor 之外">
+<meta property="og:url" content="https://nevergyu.github.io/2025/04/03/more_effective_c++/%E7%A6%81%E6%AD%A2%E5%BC%82%E5%B8%B8%EF%BC%88exceptions%EF%BC%89%E6%B5%81%E5%87%BA%20destructor%20%E4%B9%8B%E5%A4%96/index.html">
+<meta property="og:site_name" content="GYu的妙妙屋">
+<meta property="og:description" content="1️⃣ destructor 函数的调用时机 对象正常状态下被销毁，也就是当它离开了它的作用域（scope）或是被明确地删除。 当对象被exception处理机制销毁——也就是exception传播过程中的（stack-unwinding）机制。  2️⃣ 理由一 有个exception正撰写你的destructor。因为如果控制权基于exception的因素离开destructor，而此时正有另">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://nevergyu.github.io/image/sn.png">
+<meta property="article:published_time" content="2025-04-03T04:00:00.000Z">
+<meta property="article:modified_time" content="2025-04-28T04:49:54.868Z">
+<meta property="article:author" content="NeverGYu">
+<meta property="article:tag" content="More Effective C++">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nevergyu.github.io/image/sn.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "条款11：禁止异常（exceptions）流出 destructor 之外",
+  "url": "https://nevergyu.github.io/2025/04/03/more_effective_c++/%E7%A6%81%E6%AD%A2%E5%BC%82%E5%B8%B8%EF%BC%88exceptions%EF%BC%89%E6%B5%81%E5%87%BA%20destructor%20%E4%B9%8B%E5%A4%96/",
+  "image": "https://nevergyu.github.io/image/sn.png",
+  "datePublished": "2025-04-03T04:00:00.000Z",
+  "dateModified": "2025-04-28T04:49:54.868Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "NeverGYu",
+      "url": "https://nevergyu.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/image/%E9%AA%B7%E9%AB%85%E9%AD%94%E6%9C%AF%E5%B8%88.png"><link rel="canonical" href="https://nevergyu.github.io/2025/04/03/more_effective_c++/%E7%A6%81%E6%AD%A2%E5%BC%82%E5%B8%B8%EF%BC%88exceptions%EF%BC%89%E6%B5%81%E5%87%BA%20destructor%20%E4%B9%8B%E5%A4%96/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '条款11：禁止异常（exceptions）流出 destructor 之外',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/styles/main.css"><script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load', preloader.endLoading)
+
+  if (true) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/sn.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">21</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">12</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">9</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/我妻善意.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" alt="Logo"><span class="site-name">GYu的妙妙屋</span></a><a class="nav-page-title" href="/"><span class="site-name">条款11：禁止异常（exceptions）流出 destructor 之外</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">条款11：禁止异常（exceptions）流出 destructor 之外</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-04-03T04:00:00.000Z" title="发表于 2025-04-03 12:00:00">2025-04-03</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-04-28T04:49:54.868Z" title="更新于 2025-04-28 12:49:54">2025-04-28</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/C-%E5%9F%BA%E7%A1%80/">C++基础</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/C-%E5%9F%BA%E7%A1%80/More-Effective-C/">More Effective C++</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="1️⃣-destructor-函数的调用时机"><a href="#1️⃣-destructor-函数的调用时机" class="headerlink" title="1️⃣ destructor 函数的调用时机"></a>1️⃣ destructor 函数的调用时机</h1><ul>
+<li>对象正常状态下被销毁，也就是当它离开了它的作用域（<code>scope</code>）或是被明确地删除。</li>
+<li>当对象被<code>exception</code>处理机制销毁——也就是<code>exception</code>传播过程中的（stack-unwinding）机制。</li>
+</ul>
+<h1 id="2️⃣-理由一"><a href="#2️⃣-理由一" class="headerlink" title="2️⃣ 理由一"></a>2️⃣ 理由一</h1><ul>
+<li><p>有个<code>exception</code>正撰写你的<code>destructor</code>。因为如果控制权基于<code>exception</code>的因素离开<code>destructor</code>，而此时正有另一个<code>exception</code>处于作用状态，C++会调用<code>terminate</code>函数。</p>
+  <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Session</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Session</span>();</span><br><span class="line">    ~<span class="built_in">Session</span>();</span><br><span class="line">...</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">logCreation</span><span class="params">(Session* objAddr)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">logDestruction</span><span class="params">(Session* objAddr)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>函数 <code>logCreation</code> 和 <code>logDestruction</code> 分别用来记录对象的构造和析构。</p>
+  <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Session::~<span class="built_in">Session</span>()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">logDestruction</span>(<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>如果 <code>logDestruction</code>抛出一个异常 <code>exception</code>，会发生什么事情？<ul>
+<li>首先，这个<code>exception</code>并不会被<code>Session::destructor</code>捕捉，所以它会传播到<code>destructor</code>的调用端。</li>
+<li>其次，万一这个<code>destructor</code>本身是因其他某个<code>exception</code>而被调用的，<code>terminate</code>函数便会被自动调用，于是程序会直接走上了黄泉路。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="3️⃣-理由二"><a href="#3️⃣-理由二" class="headerlink" title="3️⃣ 理由二"></a>3️⃣ 理由二</h1><ul>
+<li><p>如果<code>exception</code>从 <code>destructor</code> 内抛出，而且没有在本地被捕捉到，那么就<code>destructor</code>执行不完全。</p>
+  <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Session::<span class="built_in">Session</span>()				<span class="comment">// 为了简化，这个ctor不处理exceptions。</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">logCreation</span>(<span class="keyword">this</span>);</span><br><span class="line">    <span class="built_in">startTransaction</span>(); 		<span class="comment">// 开始一个数据库事务。</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Session::~<span class="built_in">Session</span>()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">logDestruction</span>(<span class="keyword">this</span>);</span><br><span class="line">    <span class="built_in">endTransaction</span>();			<span class="comment">//结束一个数据库事务。</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>如果<code>logDestruction</code>抛出一个<code>exception</code>，于<code>Session::Session</code>内创建的那个<code>Transaction</code>绝对不会结束。</p>
+</li>
+<li><p>或许在本例中，我们可以调换<code>destructor</code>中语句的位置，但是如果<code>endTransaction</code>抛出异常，同样    <code>destructor</code>中不会执行完整。</p>
+</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://NeverGYu.github.io">NeverGYu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://nevergyu.github.io/2025/04/03/more_effective_c++/%E7%A6%81%E6%AD%A2%E5%BC%82%E5%B8%B8%EF%BC%88exceptions%EF%BC%89%E6%B5%81%E5%87%BA%20destructor%20%E4%B9%8B%E5%A4%96/">https://nevergyu.github.io/2025/04/03/more_effective_c++/%E7%A6%81%E6%AD%A2%E5%BC%82%E5%B8%B8%EF%BC%88exceptions%EF%BC%89%E6%B5%81%E5%87%BA%20destructor%20%E4%B9%8B%E5%A4%96/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://NeverGYu.github.io" target="_blank">GYu的妙妙屋</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/More-Effective-C/">More Effective C++</a></div><div class="post-share"><div class="social-share" data-image="/image/sn.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/04/03/more_effective_c++/%E4%BA%86%E8%A7%A3%E5%90%84%E7%A7%8D%E4%B8%8D%E5%90%8C%E6%84%8F%E4%B9%89%E7%9A%84%20new%20%E5%92%8C%20delete/" title="条款8：了解各种不同意义的 new 和 delete"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">条款8：了解各种不同意义的 new 和 delete</div></div><div class="info-2"><div class="info-item-1">1️⃣ 问题的引入 如何理解new operator 和 opertor new 之间的差异 ？ 什么是 placement new，它的作用是什么？  2️⃣ 案例解析1string* ps = new string(&quot;Memory Management&quot;);   这里使用的new是所谓的new operator。这个操作符是由语言内建的，不能被改变意义。 它的动作以下两方面： 第一，它分配足够的内存，用来放置某类型的对象。 第二，它调用一个constructor，为刚才分配的内存中的那个对象设定初值。   我们能够改变的是用来容纳对象的那块内存的分配行为。 newo perator调用某个函数，执行必要的内存分配，我们可以重写那个函数，改变其行为。 这个函数的名称叫做operator new。    3️⃣ 进一步理解 函数operator new 的定义式：  1void* operator new(size_t size);  - 返回值和参数解析     * 返回值类型为 `void*`，返回的指针，指向一块原始的、未设初值的内存     *...</div></div></div></a><a class="pagination-related" href="/2025/04/04/more_effective_c++/%E4%BA%86%E8%A7%A3%E2%80%9C%E4%B8%B4%E6%97%B6%E5%AF%B9%E8%B1%A1%E2%80%9D%E7%9A%84%E6%9D%A5%E6%BA%90/" title="条款19：了解“临时对象”的来源"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">条款19：了解“临时对象”的来源</div></div><div class="info-2"><div class="info-item-1">1️⃣ 什么是临时对象？ 局部变量  在函数作用域定义的temp并非“临时对象”，而是“局部对象”。   1234567template&lt; class T&gt;void swap(T&amp; object1, T&amp; object2)&#123;    T temp = object1;    object1 = object2;    object2 = temp;&#125;  临时对象  “临时对象”是不可见的——不会在你的源代码中出现。 只要产生一个non-heap object而没有为它命名，便诞生了一个“临时对象”。    2️⃣ 临时对象产生于什么情况？ 发生隐式类型转换，以求函数调用能够成功。 当函数返回对象的时候。  3️⃣ 进一步理解“为了让函数调用成功”而产生的临时对象 产生时机  传递某对象给一个函数，而其类型与它即将绑定上去的参数类型不同。   代码解析   123456789101112//返回 ch 在str中的出现个数。size_t countChar(const string&amp; str, char ch);char...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/04/05/more_effective_c++/%E4%BA%86%E8%A7%A3%20virtual%20function%E3%80%81multiple%20inheritance%E3%80%81virtual%20base%20class%E3%80%81runtime%20type%20identification%20%E7%9A%84%E6%88%90%E6%9C%AC/" title="条款24：了解 virtual function、multiple inheritance、virtual base class、runtime type identification 的成本"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-05</div><div class="info-item-2">条款24：了解 virtual function、multiple inheritance、virtual base class、runtime type identification 的成本</div></div><div class="info-2"><div class="info-item-1">1️⃣ 问题的引入 当一个“虚函数”被调用时，执行的代码必须对应于“调用者（对象）的动态类型”。 对象的pointer或reference，其类型是无形的，那么编译器是如何有效率的实现这样的行为呢？ 编译器采用的是“virtual table”和“virtual table pointer”。  2️⃣ 虚表（virtual table） 定义  vtbl通常是一个由“函数指针”架构而成的数组。 程序中的每一个class凡声明（或继承）虚函数者，都有自己的一个vtbl，而其中的条目就是该    class的各个虚函数实现体的指针。    123456789101112class C1&#123;public:    C1();    virtual ~C1() ;    virtual void f1() ;    virtual int f2(char c) const;    virtual void f3(const string&amp; s);    void f4 () const;    ...&#125;;   C1虚表示意图  ...</div></div></div></a><a class="pagination-related" href="/2025/04/01/more_effective_c++/%E4%B8%8D%E4%BB%A5%E5%A4%9A%E6%80%81%E7%9A%84%E6%80%A7%E8%B4%A8%E5%A4%84%E7%90%86%E6%95%B0%E7%BB%84/" title="条款03：不以多态的性质处理数组"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-01</div><div class="info-item-2">条款03：不以多态的性质处理数组</div></div><div class="info-2"><div class="info-item-1">1️⃣ 继承 继承的最重要性质就是：可以通过“指向base class objects”的 pointers 或 references，来操作 derived class objects。如此的pointers和 references，我们说其行为是多态的。  2️⃣ 问题 C++允许你通过base class的 pointers和 references来操作“derived class objects“所形成的数组。  3️⃣ 例子12class BST &#123; ... &#125;;class BalanceBST : BST &#123; ... &#125;;  123456void printBSTArray(ostream&amp; s, const BST array[], int numElements)&#123;    for (int i = O; i &lt; numElements; ++i) &#123;        s &lt;&lt; array[i];	// 假设 BST objects 有一个 operator&lt;&lt; 可用。...</div></div></div></a><a class="pagination-related" href="/2025/04/04/more_effective_c++/%E4%BA%86%E8%A7%A3%E2%80%9C%E4%B8%B4%E6%97%B6%E5%AF%B9%E8%B1%A1%E2%80%9D%E7%9A%84%E6%9D%A5%E6%BA%90/" title="条款19：了解“临时对象”的来源"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-04</div><div class="info-item-2">条款19：了解“临时对象”的来源</div></div><div class="info-2"><div class="info-item-1">1️⃣ 什么是临时对象？ 局部变量  在函数作用域定义的temp并非“临时对象”，而是“局部对象”。   1234567template&lt; class T&gt;void swap(T&amp; object1, T&amp; object2)&#123;    T temp = object1;    object1 = object2;    object2 = temp;&#125;  临时对象  “临时对象”是不可见的——不会在你的源代码中出现。 只要产生一个non-heap object而没有为它命名，便诞生了一个“临时对象”。    2️⃣ 临时对象产生于什么情况？ 发生隐式类型转换，以求函数调用能够成功。 当函数返回对象的时候。  3️⃣ 进一步理解“为了让函数调用成功”而产生的临时对象 产生时机  传递某对象给一个函数，而其类型与它即将绑定上去的参数类型不同。   代码解析   123456789101112//返回 ch 在str中的出现个数。size_t countChar(const string&amp; str, char ch);char...</div></div></div></a><a class="pagination-related" href="/2025/04/03/more_effective_c++/%E4%BA%86%E8%A7%A3%E2%80%9C%E6%8A%9B%E5%87%BA%E4%B8%80%E4%B8%AA%20exception%E2%80%9D%E4%B8%8E%E2%80%9C%E4%BC%A0%E9%80%92%E4%B8%80%E4%B8%AA%E5%8F%82%E6%95%B0%E2%80%9D%E6%88%96%E8%80%85%E2%80%9C%E8%B0%83%E7%94%A8%E4%B8%80%E4%B8%AA%E8%99%9A%E5%87%BD%E6%95%B0%E2%80%9D%E4%B9%8B%E9%97%B4%E7%9A%84%E5%B7%AE%E5%BC%82/" title="条款12：了解“抛出一个 exception”与“传递一个参数”或者“调用一个虚函数”之间的差异"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-03</div><div class="info-item-2">条款12：了解“抛出一个 exception”与“传递一个参数”或者“调用一个虚函数”之间的差异</div></div><div class="info-2"><div class="info-item-1">1️⃣ 函数参数和catch语句的声明方法1class Widget &#123;...&#125;;					 //某个class，细节不重要。  123456789101112void f1 (Widget w) ;				// 所有这些函数需要的参数void f2 (Widget&amp; w) ;				// 分别是Widget,Widget&amp;void f3 (const Widget&amp; w);			// 或 Widget*类型。void f4 (Widget *pw) ;void f5(const Widget *pw);catch (Widget w) ...				// 所有这些catch子句catch (Widget&amp; w)...				// 用来捕捉类型为catch (const Widget&amp; w)...			// Widget, Widget&amp;或catch (Widget *pw) ...				// Widget* 的 exceptions。catch (const Widget *pw)...  2️⃣...</div></div></div></a><a class="pagination-related" href="/2025/04/03/more_effective_c++/%E4%BA%86%E8%A7%A3%E5%90%84%E7%A7%8D%E4%B8%8D%E5%90%8C%E6%84%8F%E4%B9%89%E7%9A%84%20new%20%E5%92%8C%20delete/" title="条款8：了解各种不同意义的 new 和 delete"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-03</div><div class="info-item-2">条款8：了解各种不同意义的 new 和 delete</div></div><div class="info-2"><div class="info-item-1">1️⃣ 问题的引入 如何理解new operator 和 opertor new 之间的差异 ？ 什么是 placement new，它的作用是什么？  2️⃣ 案例解析1string* ps = new string(&quot;Memory Management&quot;);   这里使用的new是所谓的new operator。这个操作符是由语言内建的，不能被改变意义。 它的动作以下两方面： 第一，它分配足够的内存，用来放置某类型的对象。 第二，它调用一个constructor，为刚才分配的内存中的那个对象设定初值。   我们能够改变的是用来容纳对象的那块内存的分配行为。 newo perator调用某个函数，执行必要的内存分配，我们可以重写那个函数，改变其行为。 这个函数的名称叫做operator new。    3️⃣ 进一步理解 函数operator new 的定义式：  1void* operator new(size_t size);  - 返回值和参数解析     * 返回值类型为 `void*`，返回的指针，指向一块原始的、未设初值的内存     *...</div></div></div></a><a class="pagination-related" href="/2025/04/02/more_effective_c++/%E5%8C%BA%E5%88%86%20++%20%E5%92%8C%20--%20%20%E7%9A%84%E5%89%8D%E7%BD%AE(prefix)%E5%92%8C%E5%90%8E%E7%BD%AE(postfix)%E8%A1%A8%E8%BE%BE%E5%BC%8F/" title="条款6：了解各种不同意义的 new 和 delete"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-02</div><div class="info-item-2">条款6：了解各种不同意义的 new 和 delete</div></div><div class="info-2"><div class="info-item-1">1️⃣问题的引入 重载函数是以参数类型来区分彼此，然而不论 ++或 – 操作符的前置或后置式，都没有参数。  为了填平语言上的漏洞，只好让后置式有一个int自变量，并且在它被调用时，编译器默默为该int指定一个0值。   123456789101112131415class UPInt &#123;					 		// &quot;unlimited precision int&quot;public:    UPInt&amp; operator++();				//前置式(prefix)++。    const UPInt operator++(int);		//后置式(postfix)++。    UPInt&amp; operator--();				// 前置式(prefix)-—。    const UPInt operator--(int);		//后置式(postfix)--。    UPInt&amp; operator+=(int);				//+=操作符，结合UPInts和intS。...&#125;;UPInt i;++i;				//...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/sn.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">NeverGYu</div><div class="author-info-description">纵使困顿难行，亦当砥砺奋进</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">21</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">12</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">9</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/NeverGYu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/NeverGYu" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is GYu Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1%EF%B8%8F%E2%83%A3-destructor-%E5%87%BD%E6%95%B0%E7%9A%84%E8%B0%83%E7%94%A8%E6%97%B6%E6%9C%BA"><span class="toc-number">1.</span> <span class="toc-text">1️⃣ destructor 函数的调用时机</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2%EF%B8%8F%E2%83%A3-%E7%90%86%E7%94%B1%E4%B8%80"><span class="toc-number">2.</span> <span class="toc-text">2️⃣ 理由一</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3%EF%B8%8F%E2%83%A3-%E7%90%86%E7%94%B1%E4%BA%8C"><span class="toc-number">3.</span> <span class="toc-text">3️⃣ 理由二</span></a></li></ol></div></div><div class="card-widget card-post-series"><div class="item-headline"><i class="fa-solid fa-layer-group"></i><span>系列文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/06/more_effective_c++/%E5%B0%86%20constructor%E5%92%8C%20non-member%20function%20%E8%99%9A%E5%8C%96/" title="条款25：将 constructor和 non-member function 虚化">条款25：将 constructor和 non-member function 虚化</a><time datetime="2025-04-06T04:00:00.000Z" title="发表于 2025-04-06 12:00:00">2025-04-06</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/05/more_effective_c++/%E4%BA%86%E8%A7%A3%20virtual%20function%E3%80%81multiple%20inheritance%E3%80%81virtual%20base%20class%E3%80%81runtime%20type%20identification%20%E7%9A%84%E6%88%90%E6%9C%AC/" title="条款24：了解 virtual function、multiple inheritance、virtual base class、runtime type identification 的成本">条款24：了解 virtual function、multiple inheritance、virtual base class、runtime type identification 的成本</a><time datetime="2025-04-05T04:00:00.000Z" title="发表于 2025-04-05 12:00:00">2025-04-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/05/more_effective_c++/%E9%99%90%E5%88%B6%E6%9F%90%E4%B8%AAclass%E6%89%80%E8%83%BD%E4%BA%A7%E7%94%9F%E7%9A%84%E5%AF%B9%E8%B1%A1%E7%9A%84%E6%95%B0%E9%87%8F/" title="条款26：限制某个class所能产生的对象的数量">条款26：限制某个class所能产生的对象的数量</a><time datetime="2025-04-05T04:00:00.000Z" title="发表于 2025-04-05 12:00:00">2025-04-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/04/more_effective_c++/%E4%BA%86%E8%A7%A3%E2%80%9C%E4%B8%B4%E6%97%B6%E5%AF%B9%E8%B1%A1%E2%80%9D%E7%9A%84%E6%9D%A5%E6%BA%90/" title="条款19：了解“临时对象”的来源">条款19：了解“临时对象”的来源</a><time datetime="2025-04-04T04:00:00.000Z" title="发表于 2025-04-04 12:00:00">2025-04-04</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/03/more_effective_c++/%E4%BA%86%E8%A7%A3%E2%80%9C%E6%8A%9B%E5%87%BA%E4%B8%80%E4%B8%AA%20exception%E2%80%9D%E4%B8%8E%E2%80%9C%E4%BC%A0%E9%80%92%E4%B8%80%E4%B8%AA%E5%8F%82%E6%95%B0%E2%80%9D%E6%88%96%E8%80%85%E2%80%9C%E8%B0%83%E7%94%A8%E4%B8%80%E4%B8%AA%E8%99%9A%E5%87%BD%E6%95%B0%E2%80%9D%E4%B9%8B%E9%97%B4%E7%9A%84%E5%B7%AE%E5%BC%82/" title="条款12：了解“抛出一个 exception”与“传递一个参数”或者“调用一个虚函数”之间的差异">条款12：了解“抛出一个 exception”与“传递一个参数”或者“调用一个虚函数”之间的差异</a><time datetime="2025-04-03T04:00:00.000Z" title="发表于 2025-04-03 12:00:00">2025-04-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/03/more_effective_c++/%E4%BA%86%E8%A7%A3%E5%90%84%E7%A7%8D%E4%B8%8D%E5%90%8C%E6%84%8F%E4%B9%89%E7%9A%84%20new%20%E5%92%8C%20delete/" title="条款8：了解各种不同意义的 new 和 delete">条款8：了解各种不同意义的 new 和 delete</a><time datetime="2025-04-03T04:00:00.000Z" title="发表于 2025-04-03 12:00:00">2025-04-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/03/more_effective_c++/%E7%A6%81%E6%AD%A2%E5%BC%82%E5%B8%B8%EF%BC%88exceptions%EF%BC%89%E6%B5%81%E5%87%BA%20destructor%20%E4%B9%8B%E5%A4%96/" title="条款11：禁止异常（exceptions）流出 destructor 之外">条款11：禁止异常（exceptions）流出 destructor 之外</a><time datetime="2025-04-03T04:00:00.000Z" title="发表于 2025-04-03 12:00:00">2025-04-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/02/more_effective_c++/%E5%8C%BA%E5%88%86%20++%20%E5%92%8C%20--%20%20%E7%9A%84%E5%89%8D%E7%BD%AE(prefix)%E5%92%8C%E5%90%8E%E7%BD%AE(postfix)%E8%A1%A8%E8%BE%BE%E5%BC%8F/" title="条款6：了解各种不同意义的 new 和 delete">条款6：了解各种不同意义的 new 和 delete</a><time datetime="2025-04-02T04:00:00.000Z" title="发表于 2025-04-02 12:00:00">2025-04-02</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/01/more_effective_c++/%E4%B8%8D%E4%BB%A5%E5%A4%9A%E6%80%81%E7%9A%84%E6%80%A7%E8%B4%A8%E5%A4%84%E7%90%86%E6%95%B0%E7%BB%84/" title="条款03：不以多态的性质处理数组">条款03：不以多态的性质处理数组</a><time datetime="2025-04-01T04:00:00.000Z" title="发表于 2025-04-01 12:00:00">2025-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/01/more_effective_c++/Pointer%20%E5%92%8C%20Reference%20/" title="条款1：Pointer 和 Reference">条款1：Pointer 和 Reference</a><time datetime="2025-04-01T04:00:00.000Z" title="发表于 2025-04-01 12:00:00">2025-04-01</time></div></div></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/16/sylar/%E5%8D%8F%E7%A8%8B%E6%A8%A1%E5%9D%97/" title="协程模块">协程模块</a><time datetime="2025-06-16T04:00:00.000Z" title="发表于 2025-06-16 12:00:00">2025-06-16</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/14/sylar/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9D%97/" title="线程模块">线程模块</a><time datetime="2025-06-14T04:00:00.000Z" title="发表于 2025-06-14 12:00:00">2025-06-14</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/12/sylar/%E9%85%8D%E7%BD%AE%E6%A8%A1%E5%9D%97/" title="配置模块">配置模块</a><time datetime="2025-06-12T04:00:00.000Z" title="发表于 2025-06-12 12:00:00">2025-06-12</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/10/sylar/%E6%97%A5%E5%BF%97%E6%A8%A1%E5%9D%97/" title="日志模块">日志模块</a><time datetime="2025-06-10T04:00:00.000Z" title="发表于 2025-06-10 12:00:00">2025-06-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/01/C++20/jthread%E5%92%8C%E5%81%9C%E6%AD%A2%E4%BB%A4%E7%89%8C/" title="std::jthread和停止令牌">std::jthread和停止令牌</a><time datetime="2025-06-01T04:00:00.000Z" title="发表于 2025-06-01 12:00:00">2025-06-01</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2025 By NeverGYu</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script src="/styles/fish.js"></script><div class="aplayer no-destroy" data-id="2670158166" data-server="netease" data-type="song" data-fixed="true" data-autoplay="`true`"> </div><script defer="defer" id="fluttering_ribbon" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script id="click-heart" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-heart.min.js" async="async" mobile="false"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script>(() => {
+  const destroyAplayer = () => {
+    if (window.aplayers) {
+      for (let i = 0; i < window.aplayers.length; i++) {
+        if (!window.aplayers[i].options.fixed) {
+          window.aplayers[i].destroy()
+        }
+      }
+    }
+  }
+
+  const runMetingJS = () => {
+    typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+  }
+
+  btf.addGlobalFn('pjaxSend', destroyAplayer, 'destroyAplayer')
+  btf.addGlobalFn('pjaxComplete', loadMeting, 'runMetingJS')
+})()</script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => fn())
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false 
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
