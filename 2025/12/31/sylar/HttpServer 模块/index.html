@@ -1,0 +1,348 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>HttpServer 模块 | GYu的妙妙屋</title><meta name="author" content="NeverGYu"><meta name="copyright" content="NeverGYu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="1️⃣ 概述在 sylar 框架中，HttpServer 是 TcpServer 的核心派生类，也是整个框架在 Web 开发领域的直接入口。如果说 TcpServer 负责的是 底层 的 “连接管理”，那么 HttpServer 负责的就是 “业务协议生命周期的全链路治理”。 HttpServer 不仅继承了 TcpServer 高并发、协程驱动 的优良基因，还引入了现代 Web 框架必备的 SS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HttpServer 模块">
+<meta property="og:url" content="https://nevergyu.github.io/2025/12/31/sylar/HttpServer%20%E6%A8%A1%E5%9D%97/index.html">
+<meta property="og:site_name" content="GYu的妙妙屋">
+<meta property="og:description" content="1️⃣ 概述在 sylar 框架中，HttpServer 是 TcpServer 的核心派生类，也是整个框架在 Web 开发领域的直接入口。如果说 TcpServer 负责的是 底层 的 “连接管理”，那么 HttpServer 负责的就是 “业务协议生命周期的全链路治理”。 HttpServer 不仅继承了 TcpServer 高并发、协程驱动 的优良基因，还引入了现代 Web 框架必备的 SS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png">
+<meta property="article:published_time" content="2025-12-31T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-03-04T13:08:09.073Z">
+<meta property="article:author" content="NeverGYu">
+<meta property="article:tag" content="sylar">
+<meta property="article:tag" content="HttpServer 模块">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "HttpServer 模块",
+  "url": "https://nevergyu.github.io/2025/12/31/sylar/HttpServer%20%E6%A8%A1%E5%9D%97/",
+  "image": "https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png",
+  "datePublished": "2025-12-31T04:00:00.000Z",
+  "dateModified": "2026-03-04T13:08:09.073Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "NeverGYu",
+      "url": "https://nevergyu.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/image/%E9%AA%B7%E9%AB%85%E9%AD%94%E6%9C%AF%E5%B8%88.png"><link rel="canonical" href="https://nevergyu.github.io/2025/12/31/sylar/HttpServer%20%E6%A8%A1%E5%9D%97/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'HttpServer 模块',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/styles/main.css"><script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load', preloader.endLoading)
+
+  if (true) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">39</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">28</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/我妻善意.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" alt="Logo"><span class="site-name">GYu的妙妙屋</span></a><a class="nav-page-title" href="/"><span class="site-name">HttpServer 模块</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">HttpServer 模块</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-12-31T04:00:00.000Z" title="发表于 2025-12-31 12:00:00">2025-12-31</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-04T13:08:09.073Z" title="更新于 2026-03-04 21:08:09">2026-03-04</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/">项目实战</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/Sylar/">Sylar</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="1️⃣-概述"><a href="#1️⃣-概述" class="headerlink" title="1️⃣ 概述"></a>1️⃣ 概述</h1><p>在 <code>sylar</code> 框架中，<code>HttpServer</code> 是 <code>TcpServer</code> 的核心派生类，也是整个框架在 <code>Web</code> 开发领域的直接入口。如果说 <code>TcpServer</code> 负责的是 <strong>底层</strong> 的 <strong>“连接管理”</strong>，那么 <code>HttpServer</code> 负责的就是 <strong>“业务协议生命周期的全链路治理”</strong>。</p>
+<p><code>HttpServer</code> 不仅继承了 <code>TcpServer</code> <strong>高并发</strong>、<strong>协程驱动</strong> 的优良基因，还引入了现代 <code>Web</code> 框架必备的 <strong><code>SSL</code> 安全通信</strong>、<strong>中间件插件化</strong>、**<code>Session</code> 状态管理** 以及 <strong><code>Servlet</code> 路由分发</strong> 等高级特性。</p>
+<h1 id="2️⃣-设计核心"><a href="#2️⃣-设计核心" class="headerlink" title="2️⃣ 设计核心"></a>2️⃣ 设计核心</h1><p><code>HttpServer</code> 的 <strong>核心逻辑</strong> 高度凝练在重写的 <code>handleClient</code> 方法中。  </p>
+<blockquote>
+<p><code>handleClient</code> 将 <code>socket</code> 接收到的 <strong><code>Http</code> 请求</strong> 转化成最终的 <strong><code>HTTP</code> 响应</strong>，这其中经历了一套标准化的 <strong>“流水线”</strong> 操作：</p>
+</blockquote>
+<ul>
+<li><strong>安全加固 (<code>SSL</code>&#x2F;<code>TLS</code>)：</strong> 识别连接属性。若是 <code>HTTPS</code> 请求，则在最前端完成 <strong>非对称加密握手</strong> 逻辑（<code>doHandShake</code>），确保后续数据在加密流（<code>SslSocketStream</code>）中传输。</li>
+<li><strong>状态化封装 <code>Session</code>：</strong> 将原始 <code>socket</code> 包装为 <code>HttpSession</code>，通过 <strong>流式接口</strong> 屏蔽底层读写细节，实现对 <code>HTTP</code> 请求报文的自动化解析。</li>
+<li><strong>拦截与增强 (<code>Middleware</code>)：</strong> 通过 <code>MiddleChain</code> 机制，在业务逻辑执行前后嵌入中间件。无论是跨域处理（<code>CORS</code>）、日志审计还是身份验证，都能以 <strong>非侵入</strong> 的方式接入。</li>
+<li><strong>业务路由 (<code>Servlet Dispatch</code>)：</strong> 根据请求的 <code>URI</code>，通过 <code>ServletDispatch</code> 精确匹配对应的业务处理器（<code>Servlet</code>），实现 <strong>“一对一”</strong> 的逻辑分发。</li>
+</ul>
+<h1 id="3️⃣-相关组件"><a href="#3️⃣-相关组件" class="headerlink" title="3️⃣ 相关组件"></a>3️⃣ 相关组件</h1><h2 id="1️⃣-httpSession"><a href="#1️⃣-httpSession" class="headerlink" title="1️⃣ httpSession"></a>1️⃣ <code>httpSession</code></h2><p><code>HttpSession</code> 类可以理解成 <strong>“一次 <code>HTTP</code> 连接的会话封装”</strong>：</p>
+<ul>
+<li>把底层 <code>socket</code> 流(<code>SocketStream</code>) 包装起来：提供 <strong>收请求</strong>、<strong>发响应</strong>、<strong>关闭连接</strong> 这三个最核心的 <code>HTTP</code> 服务端操作，让上层业务不需要直接跟 <code>socket</code> 打交道。</li>
+<li><code>HttpSession</code> 不关心底层是 <code>TCP</code> 还是 <code>SSL</code>，它只依赖 <strong>“流”</strong> 的读写能力。</li>
+</ul>
+<h3 id="整体框架"><a href="#整体框架" class="headerlink" title="整体框架"></a>整体框架</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">HttpSession</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">using</span> ptr = std::shared_ptr&lt;HttpSession&gt;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  @brief 构造函数 </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="built_in">HttpSession</span>(SocketStream::ptr stream, <span class="type">bool</span> owner = <span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  @brief 用来接收Http请求 </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">HttpRequest::ptr <span class="title">recvRequest</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  @brief 用来发送Http响应</span></span><br><span class="line"><span class="comment">     *  @param[in] rsp HTTP响应</span></span><br><span class="line"><span class="comment">     *  @return &gt;0 发送成功</span></span><br><span class="line"><span class="comment">     *          =0 对方关闭</span></span><br><span class="line"><span class="comment">     *          &lt;0 Socket异常</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">sendResponse</span><span class="params">(HttpResponse::ptr rsp)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  @brief 关闭套接字 </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">close</span><span class="params">()</span></span>;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    SocketStream::ptr m_stream;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">HttpSession::<span class="built_in">HttpSession</span>(SocketStream::ptr stream, <span class="type">bool</span> owner)</span><br><span class="line">    : <span class="built_in">m_stream</span>(stream)</span><br><span class="line">&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">HttpRequest::ptr <span class="title">HttpSession::recvRequest</span><span class="params">()</span> </span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 定义HttpRequest解析器</span></span><br><span class="line">    <span class="function">HttpRequestParser::ptr <span class="title">parser</span><span class="params">(<span class="keyword">new</span> HttpRequestParser)</span></span>;</span><br><span class="line">    <span class="comment">// 获得最大可解析的长度</span></span><br><span class="line">    <span class="type">uint64_t</span> buff_size = HttpRequestParser::<span class="built_in">GetHttpRequestBufferSize</span>();</span><br><span class="line">    <span class="comment">// 定义一个字符串数组</span></span><br><span class="line">    <span class="function">std::shared_ptr&lt;<span class="type">char</span>&gt; <span class="title">buffer</span><span class="params">(<span class="keyword">new</span> <span class="type">char</span>[buff_size], [](<span class="type">char</span>* ptr) &#123; <span class="keyword">delete</span>[] ptr; &#125;)</span></span>; </span><br><span class="line">    <span class="comment">// 获得原始数组的指针</span></span><br><span class="line">    <span class="type">char</span>* data = buffer.<span class="built_in">get</span>();</span><br><span class="line">    <span class="comment">// 定义读取数据的偏移量</span></span><br><span class="line">    <span class="type">int</span> offset = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// 通过do-while循环来解析请求</span></span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// read函数的调用过程: 此处的read -&gt; SocketStream的read -&gt; Socket的recv -&gt; 此处的Socket是accept返回的socket -&gt; 用来接受对方发送的请求</span></span><br><span class="line">        <span class="type">int</span> len = m_stream-&gt;<span class="built_in">read</span>(data + offset, buff_size - offset);</span><br><span class="line">        <span class="comment">// 如果没有读取到数据就关闭连接</span></span><br><span class="line">        <span class="keyword">if</span> (len &lt;= <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            m_stream-&gt;<span class="built_in">close</span>();</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">SYLAR_LOG_DEBUG</span>(g_logger) &lt;&lt; <span class="string">&quot;read bytes: &quot;</span> &lt;&lt; len;</span><br><span class="line">        <span class="built_in">SYLAR_LOG_DEBUG</span>(g_logger) &lt;&lt; <span class="string">&quot;raw data: &quot;</span> &lt;&lt; std::<span class="built_in">string</span>(data, len);</span><br><span class="line">        <span class="comment">// 此处代表读取到了数据</span></span><br><span class="line">        len += offset;</span><br><span class="line">        <span class="comment">// 调用解析器来进行解析: nparse表示解析了的长度</span></span><br><span class="line">        <span class="type">size_t</span> nparse = parser-&gt;<span class="built_in">execute</span>(data, len);</span><br><span class="line">        <span class="comment">// 判断解析结果</span></span><br><span class="line">        <span class="keyword">if</span> (parser-&gt;<span class="built_in">hasError</span>())</span><br><span class="line">        &#123;</span><br><span class="line">            m_stream-&gt;<span class="built_in">close</span>();</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 此时的offset 表示未解析的长度</span></span><br><span class="line">        offset = len - nparse;</span><br><span class="line">        <span class="comment">// 这表示解析长度超过了最大解析长度</span></span><br><span class="line">        <span class="keyword">if</span> (offset == (<span class="type">int</span>)buff_size)</span><br><span class="line">        &#123;</span><br><span class="line">            m_stream-&gt;<span class="built_in">close</span>();</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 这表示解析终止</span></span><br><span class="line">        <span class="keyword">if</span> (parser-&gt;<span class="built_in">isFinished</span>()) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (<span class="literal">true</span>);</span><br><span class="line">    <span class="comment">// 设置连接状态</span></span><br><span class="line">    parser-&gt;<span class="built_in">getHttpRequest</span>()-&gt;<span class="built_in">init</span>();</span><br><span class="line">    <span class="keyword">return</span> parser-&gt;<span class="built_in">getHttpRequest</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">HttpSession::sendResponse</span><span class="params">(HttpResponse::ptr rsp)</span> </span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    std::stringstream ss;</span><br><span class="line">    ss &lt;&lt; *rsp;</span><br><span class="line">    std::string data = ss.<span class="built_in">str</span>();</span><br><span class="line">    <span class="keyword">return</span> m_stream-&gt;<span class="built_in">writeFixSize</span>(data.<span class="built_in">c_str</span>(), data.<span class="built_in">size</span>());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">HttpSession::close</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    m_stream-&gt;<span class="built_in">close</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>m_stream</code>：保存 <code>socket</code> 连接通。<code>SocketStream</code> 类保存了从 <code>socket</code> 读&#x2F;写能力。</li>
+<li><code>recvRequest()</code>：从字节流 <code>SocketStream</code>读出一个完整的 <code>Http</code> 请求。</li>
+<li><code>sendResponse()</code>：它会把 <code>HttpResponse</code> 变成标准 <code>HTTP</code> 响应文本并写入 <code>socket</code>，并将其发送给客户端。</li>
+<li><code>close()</code>：关闭 <code>socket</code> 的读写能力</li>
+</ul>
+<h2 id="2️⃣-SSL-相关成员"><a href="#2️⃣-SSL-相关成员" class="headerlink" title="2️⃣ SSL 相关成员"></a>2️⃣ SSL 相关成员</h2><h3 id="SslConfig"><a href="#SslConfig" class="headerlink" title="SslConfig"></a><code>SslConfig</code></h3><p><code>HttpServer</code> 迈向生产环境的过程中，安全通信 <code>HTTPS</code> 是无法绕过的门槛。<code>SslConfig</code> 类是简单的配置集合，但它实际上是服务器 <strong>“安全策略的蓝图”</strong>。</p>
+<blockquote>
+<p><code>ssl_config</code> 主要提供各个成员变量的 <code>set</code>&#x2F;<code>get</code> 方法。</p>
+</blockquote>
+<h4 id="成员变量"><a href="#成员变量" class="headerlink" title="成员变量"></a>成员变量</h4><ul>
+<li><p><strong><code>m_certfile</code>：</strong> <strong>存放服务器的公钥证书</strong>。通常是 <code>.crt</code> 或 <code>.pem</code> 格式</p>
+<blockquote>
+<p>在握手阶段发送给客户端，包含服务器的名称、公钥以及 CA 的签名。它是客户端验证服务器合法性的“身份证”。</p>
+</blockquote>
+</li>
+<li><p><strong><code>m_keyfile</code>：</strong> <strong>存放服务器的私钥</strong>。通常是 <code>.key</code> 或 <code>.pem</code> 格式）。</p>
+<blockquote>
+<p>用于解密客户端发送的对称密钥，或在握手时进行数字签名。</p>
+</blockquote>
+</li>
+<li><p><strong><code>m_chainfile</code>：</strong> 存放中间 <code>CA</code>（证书颁发机构）的证书。</p>
+<blockquote>
+<p>如果 <strong>服务器证书</strong> 不是直接由 <strong>顶级根证书</strong> 签发的，客户端需要通过 <strong>证书链</strong> 追溯到它信任的<strong>根证书</strong>。</p>
+</blockquote>
+</li>
+<li><p><strong><code>m_version</code>：</strong> 指定使用的 <code>TLS</code> 版本。</p>
+<blockquote>
+<p>主要用于 <strong>控制安全上下限</strong>。例如，<code>TLS 1.3</code> 移除了许多不安全的加密算法并优化了握手时间。通常建议使用 <code>TLS_1_2</code> 或更高。</p>
+</blockquote>
+</li>
+<li><p><strong><code>m_cipherList</code>：</strong> 定义服务器支持的一系列 <strong>加密算法</strong>。</p>
+<blockquote>
+<p>规定双方如何交换密钥、如何加密数据、如何校验完整性。</p>
+</blockquote>
+</li>
+<li><p><strong><code>m_verifyClient</code>：</strong> 是否开启双向认证 (<code>mTLS</code>) 开关。</p>
+<blockquote>
+<p>开启后，<strong>服务器在握手时会强制要求客户端提供证书</strong>。常用于银行、<code>API</code> 网关或微服务间内部通信。</p>
+</blockquote>
+</li>
+<li><p><strong><code>m_verifyDepth</code>：</strong>  证书链校验的最大深度。</p>
+<blockquote>
+<p>例如设为 4，表示服务器在验证客户端证书时，最多往上追溯 4 级 CA。超过此深度则视为无效，防止通过过长的证书链进行伪造攻击。</p>
+</blockquote>
+</li>
+<li><p><strong><code>m_sessionTimeout</code>：</strong> <code>SSL Session</code> 缓存的有效期（单位：秒）。</p>
+<blockquote>
+<p>客户端在有效期内重连时，可以跳过繁琐的非对称加密握手，直接恢复之前的会话，大幅降低 <code>CPU</code> 负载。</p>
+</blockquote>
+</li>
+<li><p><strong><code>m_sessionCacheSize</code>：</strong> 服务器内存中存储 <code>SSL</code> 会话信息的最大条数。</p>
+<blockquote>
+<p>限制缓存占用的内存。对于超大规模并发的服务器，需要增大此值以提高会话复用率，减少频繁的完整握手。</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="SslContext"><a href="#SslContext" class="headerlink" title="SslContext"></a><code>SslContext</code></h3><p>在 <code>sylar</code> 框架中，<code>SslContext</code> 扮演的是 <code>OpenSSL</code> 资源的掌门人。</p>
+<p>它的核心意义在于将 <strong>“复杂的 <code>C API</code> 过程式初始化”</strong> 封装为 <strong>“简洁的 <code>C++</code> 面向对象调用”</strong>。在整个系统中，它的作用可以概括为以下三点：</p>
+<ul>
+<li><strong>资源生命周期管理：</strong> 通过 <code>Noncopyable</code> 和析构函数中的 <code>SSL_CTX_free</code>，确保底层的安全上下文资源永不泄漏，且不被非法拷贝。</li>
+<li><strong>安全策略落地的“处理器”：</strong> 读取 <code>SslConfig</code> 中的静态配置（<strong>证书路径</strong>、<strong>协议版本</strong>、<strong>加密套件</strong>），并将其 <strong>“翻译”</strong> 为 <code>OpenSSL</code> 内部的状态机参数。</li>
+<li><strong>握手模板的“母体”：</strong> 在 <code>HttpServer</code> 中，每当有一个新的 <code>TCP</code> 连接进来，系统都会引用这个唯一的 <code>SslContext</code> 句柄来产生具体的 <code>SSL</code> 握手对象。</li>
+</ul>
+<h4 id="重要函数"><a href="#重要函数" class="headerlink" title="重要函数"></a>重要函数</h4><ul>
+<li><p><code>构造函数</code><br>&emsp;&emsp;保存 SSL 配置以及初始化 <code>SSL_CTX* m_ctx</code> 为空</p>
+  <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SslContext::<span class="built_in">SslContext</span>(<span class="type">const</span> SslConfig&amp; config)</span><br><span class="line">    : <span class="built_in">m_config</span>(config)</span><br><span class="line">    , <span class="built_in">m_ctx</span>(<span class="literal">nullptr</span>)</span><br><span class="line">&#123;&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p><code>initilaize()</code><br>&emsp;&emsp; <strong>作用</strong>：把服务器端 <code>TLS/SSL</code> 所需要的 <code>OpenSSL</code> 环境和 <code>SSL_CTX</code>（上下文）一次性初始化好，让后续每个连接都能基于这个上下文去创建 <code>SSL*</code> 并完成握手、加密通信。</p>
+  <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">SslContext::initilaize</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 初始化OpenSSL</span></span><br><span class="line">    <span class="built_in">OPENSSL_init_ssl</span>(OPENSSL_INIT_LOAD_SSL_STRINGS | OPENSSL_INIT_LOAD_CRYPTO_STRINGS, <span class="literal">nullptr</span>);</span><br><span class="line">    <span class="comment">// 创建 SSL 上下文</span></span><br><span class="line">    <span class="type">const</span> SSL_METHOD* method = <span class="built_in">TLS_server_method</span>();</span><br><span class="line">    m_ctx = <span class="built_in">SSL_CTX_new</span>(method);</span><br><span class="line">    <span class="keyword">if</span> (!m_ctx)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">handleSslError</span>(<span class="string">&quot;Failed to create SSL context&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 设置Ssl选项</span></span><br><span class="line">    <span class="type">long</span> option = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION |SSL_OP_CIPHER_SERVER_PREFERENCE;</span><br><span class="line">    <span class="built_in">SSL_CTX_set_options</span>(m_ctx, option);</span><br><span class="line">    <span class="comment">// 加载证书和密钥</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">loadCertificates</span>())</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 设置协议版本</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">setupProtocol</span>())</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 设置会话缓存</span></span><br><span class="line">    <span class="built_in">setupSessionCache</span>();</span><br><span class="line">    <span class="comment">// 表示成功输出</span></span><br><span class="line">    <span class="built_in">SYLAR_LOG_INFO</span>(g_logger) &lt;&lt; <span class="string">&quot;SSL context initialized successfully&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>loadCertificates()</code> ：主要用来<strong>加载公钥证书</strong>、<strong>加载私钥</strong>、<strong>验证公钥证书和私钥匹配</strong>、<strong>构建完整的“证书链”</strong> 以供客户端验证。</p>
+</li>
+<li><p><code>setupProtocol()</code>：设置支持的 <code>TLS</code> 的版本，以及加密套件。</p>
+</li>
+<li><p><code>setupSessionCache</code>：<strong>设置会话超时时间</strong>，确保客户端在会话期间断开重连可以无需重复握手。</p>
+</li>
+</ul>
+<h3 id="SslSocketStream"><a href="#SslSocketStream" class="headerlink" title="SslSocketStream"></a><code>SslSocketStream</code></h3><p><code>SslSocketStream</code> 继承自 <code>SocketStream</code>，它的核心使命是：在不改变上层逻辑的前提下，透明地为数据流进行 <strong>加密传输</strong>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">SslSocketStream</span> : <span class="keyword">public</span> SocketStream</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">using</span> ptr = std::shared_ptr&lt;SslSocketStream&gt;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  @brief 构造函数</span></span><br><span class="line"><span class="comment">     *  @param[in] sock 用来和客户端通信的socket</span></span><br><span class="line"><span class="comment">     *  @param[in] ctx  保存Ssl相关的信息 </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="built_in">SslSocketStream</span>(sylar::Socket::ptr sock, sylar::ssl::SslContext::ptr ctx);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  @brief 析构函数 </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    ~<span class="built_in">SslSocketStream</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  @brief 判断是否建立了连接 </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">isConnected</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  @brief 进行SSL 握手 </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">doHandShake</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  @brief 关闭socket</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * @brief 读取数据</span></span><br><span class="line"><span class="comment">     * @param[out] buffer 待接收数据的内存</span></span><br><span class="line"><span class="comment">     * @param[in] length 待接收数据的内存长度</span></span><br><span class="line"><span class="comment">     * @return</span></span><br><span class="line"><span class="comment">     *      @retval &gt;0 返回实际接收到的数据长度</span></span><br><span class="line"><span class="comment">     *      @retval =0 socket被远端关闭</span></span><br><span class="line"><span class="comment">     *      @retval &lt;0 socket错误</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">read</span><span class="params">(<span class="type">void</span>* buffer, <span class="type">size_t</span> length)</span> <span class="keyword">override</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * @brief 写入数据</span></span><br><span class="line"><span class="comment">     * @param[in] buffer 待发送数据的内存</span></span><br><span class="line"><span class="comment">     * @param[in] length 待发送数据的内存长度</span></span><br><span class="line"><span class="comment">     * @return</span></span><br><span class="line"><span class="comment">     *      @retval &gt;0 返回实际接收到的数据长度</span></span><br><span class="line"><span class="comment">     *      @retval =0 socket被远端关闭</span></span><br><span class="line"><span class="comment">     *      @retval &lt;0 socket错误</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">write</span><span class="params">(<span class="type">const</span> <span class="type">void</span>* buffer, <span class="type">size_t</span> length)</span> <span class="keyword">override</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    SSL* m_ssl;                 <span class="comment">// SSL 连接</span></span><br><span class="line">    SslContext::ptr m_ctx;      <span class="comment">// SSL 上下文</span></span><br><span class="line">    <span class="type">bool</span> m_handshake = <span class="literal">false</span>;   <span class="comment">// 标志位，判断是否握手成功</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://NeverGYu.github.io">NeverGYu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://nevergyu.github.io/2025/12/31/sylar/HttpServer%20%E6%A8%A1%E5%9D%97/">https://nevergyu.github.io/2025/12/31/sylar/HttpServer%20%E6%A8%A1%E5%9D%97/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://NeverGYu.github.io" target="_blank">GYu的妙妙屋</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/sylar/">sylar</a><a class="post-meta__tags" href="/tags/HttpServer-%E6%A8%A1%E5%9D%97/">HttpServer 模块</a></div><div class="post-share"><div class="social-share" data-image="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/12/30/sylar/TcpServer%20%E6%A8%A1%E5%9D%97/" title="TcpServer 模块"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">TcpServer 模块</div></div><div class="info-2"><div class="info-item-1">1️⃣ 概述在高性能网络框架中，TcpServer 模块往往处于 “承上启下” 的核心地位：  向下 封装了底层的 Socket 套接字细节， 向上 为各类 应用层协议 提供基础的连接管理和数据传输能力。  在 sylar 框架中，TcpServer 是一个高层次的封装，旨在提供一个 简单、稳定 且 支持多核并发 的 TCP 服务器基类。TcpServer 深度集成了 协程调度器 (IOManager) 和  套接字封装 (Socket)，使得开发者可以专注于业务逻辑，而无需处理复杂的非阻塞 I/O 和多线程竞争。 2️⃣ 设计理念在 sylar 框架中，TcpServer 不仅仅是一个简单的套接字监听器，它是底层网络组件与复杂业务协议之间的核心桥梁。其架构设计的核心灵魂在于：通过高度解耦实现极致的并发效率与扩展性。  基于 Reactor 模式的双调度器架构这是 TcpServer 高并发能力的核心。它将网络事件处理划分为两个阶段，并允许通过不同的 IOManager 进行物理隔离：  Accept 调度器：...</div></div></div></a><a class="pagination-related" href="/2026/02/10/C++%E5%85%AB%E8%82%A1/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/" title="智能指针"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">智能指针</div></div><div class="info-2"><div class="info-item-1">1️⃣ 背景在 C++ 中，动态内存的管理通过运算符 new&#x2F; delete 来完成的：  new：在动态内存中为对象分配空间并返回一个指向该对象的指针。 delete：接收一个动态对象的指针，销毁该对象，并释放与之相关的内存。  动态内存的使用很容易出现问题，因为确保在正确的时间释放内存是极其困难的 !!!  忘记释放内存：内存泄露 释放一块仍有指针引用的内存：产生引用非法内存的指针  为了更安全地使用动态内存，新标准库提供了两种智能指针来管理动态内存：  智能指针的行为类似于常规指针，区别在于它自动释放所指向的对象   shared_ptr：允许多个指针指向同一个对象。 unique_ptr：只允许单个指针独占一个对象。  2️⃣ shared_ptr 类概念std::shared_ptr&lt;T&gt; 是一个类模板，采用 RAII 手法，它的对象行为像指针，但是它可以记录有多少个对象共享它所管理的内存对象。  使用经常通过如下两种方式创建 std::shared_ptr 对象：  auto p = std::shared_ptr&lt;T&gt;(new...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/12/28/sylar/HOOK%20%E6%A8%A1%E5%9D%97/" title="HOOK 模块"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-28</div><div class="info-item-2">HOOK 模块</div></div><div class="info-2"><div class="info-item-1">1️⃣ 什么是 HOOKHOOK ，中文简称：钩子 ，是对 函数&#x2F;系统调用 API 进行一次封装。主要是将其封装成一个与原始的 函数&#x2F;系统调用 API 同名的接口。 调用这个接口的时候，会 先进行封装的操作，再执行 原始 的 函数&#x2F;系统调用API  sylar 中的 HOOK，就是为了在不重写代码的情况下，把原有代码中的 同步 socket api 都转换为 异步 操作，以提升性能。  还可以用 C++ 的子类重载来理解 HOOK。在 C++ 中，子类在重载父类的同名方法时，一种常见的实现方式是子类先完成自己的操作，再调用父类的操作，如下： 12345678910111213141516class Base &#123;public:    void Print() &#123;        cout &lt;&lt; &quot;This is Base&quot; &lt;&lt; endl;    &#125;&#125;; class Child : public Base &#123;public:    ///...</div></div></div></a><a class="pagination-related" href="/2025/12/30/sylar/TcpServer%20%E6%A8%A1%E5%9D%97/" title="TcpServer 模块"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-30</div><div class="info-item-2">TcpServer 模块</div></div><div class="info-2"><div class="info-item-1">1️⃣ 概述在高性能网络框架中，TcpServer 模块往往处于 “承上启下” 的核心地位：  向下 封装了底层的 Socket 套接字细节， 向上 为各类 应用层协议 提供基础的连接管理和数据传输能力。  在 sylar 框架中，TcpServer 是一个高层次的封装，旨在提供一个 简单、稳定 且 支持多核并发 的 TCP 服务器基类。TcpServer 深度集成了 协程调度器 (IOManager) 和  套接字封装 (Socket)，使得开发者可以专注于业务逻辑，而无需处理复杂的非阻塞 I/O 和多线程竞争。 2️⃣ 设计理念在 sylar 框架中，TcpServer 不仅仅是一个简单的套接字监听器，它是底层网络组件与复杂业务协议之间的核心桥梁。其架构设计的核心灵魂在于：通过高度解耦实现极致的并发效率与扩展性。  基于 Reactor 模式的双调度器架构这是 TcpServer 高并发能力的核心。它将网络事件处理划分为两个阶段，并允许通过不同的 IOManager 进行物理隔离：  Accept 调度器：...</div></div></div></a><a class="pagination-related" href="/2025/12/26/sylar/IOManager/" title="IOManager 模块"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-26</div><div class="info-item-2">IOManager 模块</div></div><div class="info-2"><div class="info-item-1">1️⃣ 什么是 IOManager 模块IOManager 模块可以理解为 Sylar 框架里的“协程版 I/O 事件循环 + 调度中枢”。它把 Linux 的 epoll 事件机制和协程调度器 Scheduler 融合在了一起。  当某个文件描述符 socket、pipe 等变得可读&#x2F;可写时，IOManager 不会像传统 Reactor 那样直接在 epoll 线程里执行回调，而是把对应的回调函数或协程 Fiber 重新投递到调度器队列中，由线程池里的工作线程去执行。这样一来，业务逻辑可以用“同步写法”的协程风格组织，却能获得“异步 I&#x2F;O”的高并发能力。  更具体地说，IOManager 维护了一个 FdContext 表，用来记录每个 fd 关注的读&#x2F;写事件以及事件触发后要执行的回调函数或等待中的协程。它内部的 idle() 协程长期阻塞在 epoll_wait 上  一旦事件到来，就通过 triggerEvent() 将任务调度出去；同时它还继承 TimerManager，把定时器超时回调也纳入同一套调度体系，实现“IO 事件 +...</div></div></div></a><a class="pagination-related" href="/2025/12/20/sylar/%E5%8D%8F%E7%A8%8B%E6%A8%A1%E5%9D%97/" title="协程模块"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-20</div><div class="info-item-2">协程模块</div></div><div class="info-2"><div class="info-item-1">1️⃣ 什么是协程？协程是一种比线程更轻量级的用户态并发单位，可以在一个线程内部并发执行多个任务，并且支持在任务之间进行主动挂起与恢复，从而实现看起来像并行实际上是串行的异步逻辑。  2️⃣ ucontext在 sylar 框架中，协程 Fiber 是基于 Linux 提供的 &lt;ucontext.h&gt; 实现的，该头文件中的 API 提供了保存、切换、恢复程序执行上下文的能力，允许用户在用户态实现轻量级的协程调度机制。 概述ucontext 是 POSIX 标准中定义的一组函数，用于实现用户级上下文切换。它允许程序保存和恢复执行上下文（如寄存器、程序计数器、栈等），常用于实现协程、轻量级线程或任务调度等功能。以下是对 ucontext 的详细介绍，并结合代码进行说明。 ucontext 是实现协程的一种方式。因为协程本质上就是一种用户级的线程, 既然是一种特殊的线程, 其上下文切换的实现方式应该和线程的上下文切换类似, 也需要保存必要的寄存器、程序计数器、栈等信息。 核心功能ucontext...</div></div></div></a><a class="pagination-related" href="/2025/12/22/sylar/%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E6%A8%A1%E5%9D%97/" title="协程调度模块"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-22</div><div class="info-item-2">协程调度模块</div></div><div class="info-2"><div class="info-item-1">1️⃣ 什么是协程调度器？协程调度器（Scheduler）本质上是把“要运行的协程&#x2F;任务”分配到“可用的线程”上执行的调度中心。在 Sylar 里它封装的是一种 N-M 调度模型：N 个协程（Fiber &#x2F; 回调函数）复用 M 个线程。调度器内部维护一个线程池和任务队列，外部通过 schedule() 把 Fiber 或 std::function&lt;void()&gt; 投递进来；当队列从空变为非空时，调度器会通过 tickle() 唤醒处于 idle() 的空闲线程&#x2F;空闲协程去取任务执行。这样做的好处是：协程切换发生在用户态、成本低，同时又能利用多线程把不同协程并行跑起来，实现高并发下的高效调度与资源利用。 2️⃣ 整体框架图 3️⃣ 代码类图 4️⃣...</div></div></div></a><a class="pagination-related" href="/2025/12/24/sylar/%E5%AE%9A%E6%97%B6%E5%99%A8%E6%A8%A1%E5%9D%97/" title="定时器模块"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-24</div><div class="info-item-2">定时器模块</div></div><div class="info-2"><div class="info-item-1">1️⃣ 什么是定时器定时器（ Timer ）本质上就是一种“按时间触发任务”的机制：你把一个任务 task 交给它，并告诉它“多久以后执行”或者“每隔多久执行一次”，定时器负责在合适的时间点把这个任务触发出来。  你可以把 Timer 理解成一个“闹钟”，而 TimerManager 就是“闹钟管理器”：你只负责设定时间和要做的事，到点后由它统一唤醒并执行对应任务。  在服务器&#x2F;网络框架（比如 Sylar ）里，定时器通常用来做这些事：  超时控制：连接超时、读写超时、RPC 超时重试 周期任务：心跳包、定期统计、定期清理缓存&#x2F;过期会话 延迟执行：延迟关闭连接、延迟回收资源、延迟投递任务 事件循环协作：让 epoll/select 等 I/O 等待不会“傻等”，而是能在最近的定时点醒来。具体来说，事件循环会通过 getNextTimer() 计算“距离最近一次定时任务还要等多久”，并把这个时间作为 epoll_wait 的 timeout，这样既能等待 I/O 事件，又不会错过定时器到期触发。  2️⃣ 整体框架 3️⃣...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">NeverGYu</div><div class="author-info-description">纵使困顿难行，亦当砥砺奋进</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">39</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">28</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/NeverGYu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/NeverGYu" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is GYu Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1%EF%B8%8F%E2%83%A3-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">1️⃣ 概述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2%EF%B8%8F%E2%83%A3-%E8%AE%BE%E8%AE%A1%E6%A0%B8%E5%BF%83"><span class="toc-number">2.</span> <span class="toc-text">2️⃣ 设计核心</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3%EF%B8%8F%E2%83%A3-%E7%9B%B8%E5%85%B3%E7%BB%84%E4%BB%B6"><span class="toc-number">3.</span> <span class="toc-text">3️⃣ 相关组件</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1%EF%B8%8F%E2%83%A3-httpSession"><span class="toc-number">3.1.</span> <span class="toc-text">1️⃣ httpSession</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B4%E4%BD%93%E6%A1%86%E6%9E%B6"><span class="toc-number">3.1.1.</span> <span class="toc-text">整体框架</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2%EF%B8%8F%E2%83%A3-SSL-%E7%9B%B8%E5%85%B3%E6%88%90%E5%91%98"><span class="toc-number">3.2.</span> <span class="toc-text">2️⃣ SSL 相关成员</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SslConfig"><span class="toc-number">3.2.1.</span> <span class="toc-text">SslConfig</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%88%90%E5%91%98%E5%8F%98%E9%87%8F"><span class="toc-number">3.2.1.1.</span> <span class="toc-text">成员变量</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SslContext"><span class="toc-number">3.2.2.</span> <span class="toc-text">SslContext</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%87%8D%E8%A6%81%E5%87%BD%E6%95%B0"><span class="toc-number">3.2.2.1.</span> <span class="toc-text">重要函数</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SslSocketStream"><span class="toc-number">3.2.3.</span> <span class="toc-text">SslSocketStream</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-post-series"><div class="item-headline"><i class="fa-solid fa-layer-group"></i><span>系列文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/31/sylar/HttpServer%20%E6%A8%A1%E5%9D%97/" title="HttpServer 模块">HttpServer 模块</a><time datetime="2025-12-31T04:00:00.000Z" title="发表于 2025-12-31 12:00:00">2025-12-31</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/30/sylar/TcpServer%20%E6%A8%A1%E5%9D%97/" title="TcpServer 模块">TcpServer 模块</a><time datetime="2025-12-30T04:00:00.000Z" title="发表于 2025-12-30 12:00:00">2025-12-30</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/28/sylar/HOOK%20%E6%A8%A1%E5%9D%97/" title="HOOK 模块">HOOK 模块</a><time datetime="2025-12-28T04:00:00.000Z" title="发表于 2025-12-28 12:00:00">2025-12-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/26/sylar/IOManager/" title="IOManager 模块">IOManager 模块</a><time datetime="2025-12-26T04:00:00.000Z" title="发表于 2025-12-26 12:00:00">2025-12-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/24/sylar/%E5%AE%9A%E6%97%B6%E5%99%A8%E6%A8%A1%E5%9D%97/" title="定时器模块">定时器模块</a><time datetime="2025-12-24T04:00:00.000Z" title="发表于 2025-12-24 12:00:00">2025-12-24</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/22/sylar/%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E6%A8%A1%E5%9D%97/" title="协程调度模块">协程调度模块</a><time datetime="2025-12-22T04:00:00.000Z" title="发表于 2025-12-22 12:00:00">2025-12-22</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/sylar/%E5%8D%8F%E7%A8%8B%E6%A8%A1%E5%9D%97/" title="协程模块">协程模块</a><time datetime="2025-12-20T04:00:00.000Z" title="发表于 2025-12-20 12:00:00">2025-12-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/14/sylar/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9D%97/" title="线程模块">线程模块</a><time datetime="2025-06-14T04:00:00.000Z" title="发表于 2025-06-14 12:00:00">2025-06-14</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/12/sylar/%E9%85%8D%E7%BD%AE%E6%A8%A1%E5%9D%97/" title="配置模块">配置模块</a><time datetime="2025-06-12T04:00:00.000Z" title="发表于 2025-06-12 12:00:00">2025-06-12</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/10/sylar/%E6%97%A5%E5%BF%97%E6%A8%A1%E5%9D%97/" title="日志模块">日志模块</a><time datetime="2025-06-10T04:00:00.000Z" title="发表于 2025-06-10 12:00:00">2025-06-10</time></div></div></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/01/%E5%85%AB%E8%82%A1%E5%B8%B8%E9%97%AE%E9%97%AE%E9%A2%98/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" title="操作系统常问问题">操作系统常问问题</a><time datetime="2026-03-01T04:00:00.000Z" title="发表于 2026-03-01 12:00:00">2026-03-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/01/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E4%BA%86%E8%A7%A3%20Linux%20%E9%98%B2%E7%81%AB%E5%A2%99/" title="了解 Linux 防火墙">了解 Linux 防火墙</a><time datetime="2026-03-01T02:00:00.000Z" title="发表于 2026-03-01 10:00:00">2026-03-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/12/C++%E5%85%AB%E8%82%A1/%E5%A4%9A%E6%80%81%E5%8F%8A%E5%85%B6%E8%99%9A%E5%87%BD%E6%95%B0%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/" title="多态及其虚函数底层原理">多态及其虚函数底层原理</a><time datetime="2026-02-12T04:00:00.000Z" title="发表于 2026-02-12 12:00:00">2026-02-12</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/C++%E5%85%AB%E8%82%A1/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/" title="智能指针">智能指针</a><time datetime="2026-02-10T04:00:00.000Z" title="发表于 2026-02-10 12:00:00">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/31/sylar/HttpServer%20%E6%A8%A1%E5%9D%97/" title="HttpServer 模块">HttpServer 模块</a><time datetime="2025-12-31T04:00:00.000Z" title="发表于 2025-12-31 12:00:00">2025-12-31</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By NeverGYu</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script src="/styles/fish.js"></script><div class="aplayer no-destroy" data-id="2670158166" data-server="netease" data-type="song" data-fixed="true" data-autoplay="`true`"> </div><script defer="defer" id="fluttering_ribbon" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script id="click-heart" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-heart.min.js" async="async" mobile="false"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script>(() => {
+  const destroyAplayer = () => {
+    if (window.aplayers) {
+      for (let i = 0; i < window.aplayers.length; i++) {
+        if (!window.aplayers[i].options.fixed) {
+          window.aplayers[i].destroy()
+        }
+      }
+    }
+  }
+
+  const runMetingJS = () => {
+    typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+  }
+
+  btf.addGlobalFn('pjaxSend', destroyAplayer, 'destroyAplayer')
+  btf.addGlobalFn('pjaxComplete', loadMeting, 'runMetingJS')
+})()</script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => fn())
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false 
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
