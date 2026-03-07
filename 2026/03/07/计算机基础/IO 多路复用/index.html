@@ -1,0 +1,362 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>IO 多路复用 | GYu的妙妙屋</title><meta name="author" content="NeverGYu"><meta name="copyright" content="NeverGYu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="1️⃣ 同步阻塞 IO造成的问题 两处阻塞： 1. 进程刚调用 recv ； 2. 等待内核将 数据 拷贝到 用户缓冲区 两处进程切换： 1. 连接持续没有数据到达; 2. 网卡将数据从 内核 复制到 socket 的 等待队列，进程会被唤醒 单对单连接：一个进程只能等待一条连接   2️⃣ 同步非阻塞 IO优点将数据从 网卡 拷贝到 socket 的内核空间 这一阶段变成 非阻塞模式。  用户进">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IO 多路复用">
+<meta property="og:url" content="https://nevergyu.github.io/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/IO%20%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/index.html">
+<meta property="og:site_name" content="GYu的妙妙屋">
+<meta property="og:description" content="1️⃣ 同步阻塞 IO造成的问题 两处阻塞： 1. 进程刚调用 recv ； 2. 等待内核将 数据 拷贝到 用户缓冲区 两处进程切换： 1. 连接持续没有数据到达; 2. 网卡将数据从 内核 复制到 socket 的 等待队列，进程会被唤醒 单对单连接：一个进程只能等待一条连接   2️⃣ 同步非阻塞 IO优点将数据从 网卡 拷贝到 socket 的内核空间 这一阶段变成 非阻塞模式。  用户进">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png">
+<meta property="article:published_time" content="2026-03-07T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-03-07T14:05:26.959Z">
+<meta property="article:author" content="NeverGYu">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "IO 多路复用",
+  "url": "https://nevergyu.github.io/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/IO%20%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/",
+  "image": "https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png",
+  "datePublished": "2026-03-07T02:00:00.000Z",
+  "dateModified": "2026-03-07T14:05:26.959Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "NeverGYu",
+      "url": "https://nevergyu.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/image/%E9%AA%B7%E9%AB%85%E9%AD%94%E6%9C%AF%E5%B8%88.png"><link rel="canonical" href="https://nevergyu.github.io/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/IO%20%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'IO 多路复用',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/styles/main.css"><script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load', preloader.endLoading)
+
+  if (true) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">42</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">28</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/我妻善意.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" alt="Logo"><span class="site-name">GYu的妙妙屋</span></a><a class="nav-page-title" href="/"><span class="site-name">IO 多路复用</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">IO 多路复用</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-07T02:00:00.000Z" title="发表于 2026-03-07 10:00:00">2026-03-07</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-07T14:05:26.959Z" title="更新于 2026-03-07 22:05:26">2026-03-07</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/IO-%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/">IO 多路复用</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="1️⃣-同步阻塞-IO"><a href="#1️⃣-同步阻塞-IO" class="headerlink" title="1️⃣ 同步阻塞 IO"></a>1️⃣ 同步阻塞 <code>IO</code></h1><h2 id="造成的问题"><a href="#造成的问题" class="headerlink" title="造成的问题"></a>造成的问题</h2><ul>
+<li><strong>两处阻塞：</strong> 1. 进程刚调用 <code>recv</code> ； 2. 等待内核将 <strong>数据</strong> 拷贝到 <strong>用户缓冲区</strong></li>
+<li><strong>两处进程切换：</strong> 1. 连接持续没有数据到达; 2. 网卡将数据从 <strong>内核</strong> 复制到 <code>socket</code> 的 <strong>等待队列</strong>，进程会被唤醒</li>
+<li><strong>单对单连接</strong>：一个进程只能等待一条连接</li>
+</ul>
+<p><img src="https://picui.ogmua.cn/s1/2026/03/07/69abea14f13f1.webp"></p>
+<h1 id="2️⃣-同步非阻塞-IO"><a href="#2️⃣-同步非阻塞-IO" class="headerlink" title="2️⃣ 同步非阻塞 IO"></a>2️⃣ 同步非阻塞 <code>IO</code></h1><h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>将数据从 <em><strong>网卡</strong></em> 拷贝到 <em><code>socket</code> 的内核空间</em> 这一阶段变成 <strong>非阻塞模式</strong>。</p>
+<ul>
+<li>用户进程调用 <code>recvfrom()</code> 会重复发出请求，检查数据是否到达 <code>socket</code> 的 <strong>等待队列</strong>。如果没有到，会立即返回。</li>
+</ul>
+<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><p>没有解决：当数据到达 <code>socket</code> 的 <strong>等待队列</strong>，用户进程需要将数据从 <strong>内核空间</strong> 拷贝到 <strong>用户空间</strong>。</p>
+<p><img src="https://picui.ogmua.cn/s1/2026/03/07/69abea154921e.webp"></p>
+<h1 id="3️⃣-同步阻塞-IO-的数据接收流程"><a href="#3️⃣-同步阻塞-IO-的数据接收流程" class="headerlink" title="3️⃣ 同步阻塞 IO 的数据接收流程"></a>3️⃣ 同步阻塞 <code>IO</code> 的数据接收流程</h1><ul>
+<li>服务端使用系统调用 <code>socket</code> 会陷入到内核态，内核就会创建 <strong><code>socket</code> 内核对象</strong>，其主要包含两个重要结构体：<ul>
+<li><strong>(进程)等待队列：</strong> 存放了进程的 <strong>进程描述符</strong> 和 <strong>回调函数</strong>。</li>
+<li><strong>(数据)接收队列：</strong> 存放了网卡接收到的需要该 <code>socket</code> 的数据</li>
+</ul>
+</li>
+<li>服务端当通过 <code>socket</code> 调用 <code>recv</code> 函数时，会执行 <code>recvfrom</code> 系统调用。<ul>
+<li>如果 <code>socket</code> 的 <strong>接收队列</strong> 中没有数据，进程 A 会让出 <code>CPU</code> 执行权，进入阻塞状态。</li>
+<li>同时创建一个 <strong>等待队列项 (进程描述符 + 被唤醒时的回调函数)</strong> 放入到进程 A 的等待队列中</li>
+</ul>
+</li>
+<li>如果服务端的网卡接收到了 <strong>客户端发送的数据</strong>；<ul>
+<li><strong>网卡</strong> 先通过 <code>DMA</code> 将网络传输过来的数据复制到 <strong>内存环形缓冲区 <code>RingBuffer</code></strong>;</li>
+<li><strong>网卡</strong> 再向 <code>CPU</code> 发送 <strong>硬中断</strong>;</li>
+<li><code>CPU</code> 接收到 <strong>硬中断</strong> ，就调用 <strong>网络驱动</strong> 注册的 <strong>中断处理函数</strong> 向 <strong>内核中断线程</strong> 发送 <strong>软中断</strong>，并释放 <code>CPU</code> 执行其他任务;</li>
+<li><strong>内核中断进程</strong> 接收到 <strong>软中断</strong> 后，将 <strong>网卡</strong> 复制到 <strong>内存</strong> 的数据，根据数据报文的 <code>IP</code> 和端口号，将其拷贝到对应 <code>socket</code> 的 <strong>接收队列</strong>;</li>
+<li><strong>内核中断进程</strong> 根据 <code>socket</code> 的 <strong>接收队列</strong> 的数据，通过 <strong>等待队列</strong> 中的回调函数，唤醒要处理该数据的进程 A，此时进程 A 进入到 <code>CPU</code> 的运行队列，等待 <code>CPU</code> 的调度。</li>
+<li>进程 <code>A</code> 获取 <code>CPU</code> 后，会回到之前调用 <code>recvfrom()</code> 函数时的 <strong>阻塞位置</strong> 继续执行，这时发现 <code>socket</code> 内核空间的 <strong>等待队列</strong> 有数据，<strong>会在内核态</strong> 将内核空间的 <code>socket</code> 等待队列的数据拷贝到用户空间，然后才会回到用户态执行进程的用户程序，从而真的解除阻塞；</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://picui.ogmua.cn/s1/2026/03/07/69ac0f3aad1ff.webp"></p>
+<h1 id="4️⃣-IO-多路复用"><a href="#4️⃣-IO-多路复用" class="headerlink" title="4️⃣ IO 多路复用"></a>4️⃣ <code>IO</code> 多路复用</h1><p>主要用于解决 <strong>两次进程切换，单进程对单连接</strong>。</p>
+<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>&emsp;&emsp;<strong><code>IO</code> 多路复用</strong> 主要通过 <strong>一个进程</strong> 处理 <strong>多个 <code>socket</code> 连接</strong>，使得不需要在每个 <code>socket</code> 连接的数据到达时就 <strong>切换进程</strong>，使得进程可以一直运行并只处理有数据到达的连接。</p>
+<blockquote>
+<p>如果要监听的所有连接都没有数据到达，进程还是会进入阻塞状态，直到某个连接有数据到达时被回调函数唤醒。</p>
+</blockquote>
+<h2 id="select-的实现原理"><a href="#select-的实现原理" class="headerlink" title="select 的实现原理"></a><code>select</code> 的实现原理</h2><h3 id="select-的定义"><a href="#select-的定义" class="headerlink" title="select 的定义"></a><code>select</code> 的定义</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">select</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="type">int</span> nfds,                     <span class="comment">// 监控的文件描述符集里最大文件描述符加1</span></span></span></span><br><span class="line"><span class="params"><span class="function">    fd_set *readfds,              <span class="comment">// 监控有读数据到达文件描述符集合，引用类型的参数</span></span></span></span><br><span class="line"><span class="params"><span class="function">    fd_set *writefds,             <span class="comment">// 监控写数据到达文件描述符集合，引用类型的参数</span></span></span></span><br><span class="line"><span class="params"><span class="function">    fd_set *exceptfds,            <span class="comment">// 监控异常发生达文件描述符集合，引用类型的参数</span></span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="keyword">struct</span> timeval *timeout)</span></span>;     <span class="comment">// 定时阻塞监控时间</span></span><br></pre></td></tr></table></figure>
+<p>&emsp;&emsp;<code>select</code> 会遍历每个集合的前 <code>nfds</code> 个描述符，分别找到可以读取、可以写入、发生错误的描述符，统称为 <strong>“就绪”</strong> 的描述符。然后用找到的 <strong>子集</strong> 替换这三个引用参数中的对应集合，<strong>返回所有就绪描述符的数量</strong>。</p>
+<p>&emsp;&emsp;<code>timeout</code> 参数表示调用 <code>select</code> 时的阻塞时长。</p>
+<ul>
+<li>如果所有 <code>fd</code> 文件描述符都未就绪，就阻塞调用进程，直到某个描述符就绪，或者阻塞超过设置的 <code>timeout</code> 后，返回。</li>
+<li>如果 <code>timeout</code> 参数设为 <code>NULL</code>，会无限阻塞直到某个描述符就绪；</li>
+<li>如果 <code>timeout</code> 参数设为 0，会立即返回，不阻塞。</li>
+</ul>
+<h3 id="fd-set"><a href="#fd-set" class="headerlink" title="fd_set"></a><code>fd_set</code></h3><p><code>fd_set</code> 结构体仅包含一个整形数组，该数组的每个元素的每一位标记一个文件描述符。<br>当 <code>select</code> 返回 <code>fd_set = 00010011</code> 时，表示文件描述符 <code>1、2、5</code> 已经就绪。</p>
+<p><img src="https://picui.ogmua.cn/s1/2026/03/07/69ac1952d681d.webp"></p>
+<h3 id="缺点-1"><a href="#缺点-1" class="headerlink" title="缺点"></a>缺点</h3><ol>
+<li>性能开销大<ul>
+<li>调用 <code>select</code> 时会陷入内核，这时需要将参数中的 <code>fd_set</code> 从用户空间拷贝到内核空间，<code>select</code> 执行完后，还需要将 <code>fd_set</code> 从内核空间拷贝回用户空间;（<code>epoll</code> 优化为不拷贝）</li>
+<li>进程被唤醒后，不知道哪些连接已就绪即收到了数据，需要遍历传递进来的所有 <code>fd_set</code> 的每一位，不管它们是否就绪；（<code>epoll</code> 优化为异步事件通知）</li>
+<li><code>select</code> 只返回就绪文件的个数，具体哪个文件可读还需要遍历；（<code>epoll</code> 优化为只返回就绪的文件描述符，无需做无效的遍历）</li>
+</ul>
+</li>
+<li>同时能够监听的文件描述符数量太少。受限于 <code>sizeof(fd_set)</code> 的大小，在编译内核时就确定了且无法更改。一般是 <code>32</code> 位操作系统是 <code>1024</code>，<code>64</code> 位是 <code>2048</code>。</li>
+</ol>
+<h2 id="poll-的实现原理"><a href="#poll-的实现原理" class="headerlink" title="poll 的实现原理"></a><code>poll</code> 的实现原理</h2><p>和 <code>select</code> 类似，只是描述 <code>fd</code> 集合的方式不同，<code>poll</code> 使用 <code>pollfd</code> 结构而非 <code>select</code> 的 <code>fd_set</code> 结构。</p>
+<h3 id="poll-的定义"><a href="#poll-的定义" class="headerlink" title="poll 的定义"></a><code>poll</code> 的定义</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">poll</span><span class="params">( <span class="keyword">struct</span> pollfd* fds，<span class="type">nfds_t</span> nfds，<span class="type">int</span> timeout )</span>；</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">pollfd</span> &#123;</span><br><span class="line">    <span class="type">int</span> fd;           <span class="comment">// 要监听的文件描述符</span></span><br><span class="line">    <span class="type">short</span> events;     <span class="comment">// 要监听的事件</span></span><br><span class="line">    <span class="type">short</span> revents;    <span class="comment">// 文件描述符fd上实际发生的事件</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="epoll-的实现原理"><a href="#epoll-的实现原理" class="headerlink" title="epoll 的实现原理"></a><code>epoll</code> 的实现原理</h2><p><code>epoll</code> 是对 <code>select</code> 和 <code>poll</code> 的改进。解决了以下这两个缺点，是性能最高、并发量最大的多路复用实现方式。</p>
+<ul>
+<li>性能开销大</li>
+<li>文件描述符数量少</li>
+</ul>
+<h3 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h3><ul>
+<li>使用 <strong>红黑树</strong> 存储文件描述符集合，每个文件描述符只需在添加时传入一次，无需用户每次都重新传入；</li>
+<li>通过 <strong>异步 <code>IO</code></strong> 事件找到就绪的文件描述符，而不是通过轮询的方式；</li>
+<li>使用 <strong>就绪队列</strong> 存储 <strong>已经就绪</strong> 的文件描述符，且会按需返回就绪的文件描述符，无须再次遍历；</li>
+</ul>
+<h3 id="主要函数"><a href="#主要函数" class="headerlink" title="主要函数"></a>主要函数</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建一个 eventpoll 内核对象</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">epoll_create</span><span class="params">(<span class="type">int</span> size)</span></span>;   </span><br><span class="line"></span><br><span class="line"><span class="comment">// 将连接到socket对象添加到 eventpoll 对象上，epoll_event是要监听的事件</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">epoll_ctl</span><span class="params">(<span class="type">int</span> epfd, <span class="type">int</span> op, <span class="type">int</span> fd, <span class="keyword">struct</span> epoll_event *event)</span></span>;   </span><br><span class="line"></span><br><span class="line"><span class="comment">// 等待连接 socket 的数据是否到达</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">epoll_wait</span><span class="params">(<span class="type">int</span> epfd, <span class="keyword">struct</span> epoll_event *events,<span class="type">int</span> maxevents, <span class="type">int</span> timeout)</span></span>;      </span><br></pre></td></tr></table></figure>
+
+<h3 id="epoll-create"><a href="#epoll-create" class="headerlink" title="epoll_create"></a><code>epoll_create</code></h3><p><code>epoll_create</code> 函数会创建一个 <code>struct eventpoll</code> 的内核对象，主要包含以下三个字段：</p>
+<ul>
+<li><strong>等待队列 <code>wq</code>：</strong> 如果 <strong>当前进程没有数据需要处理</strong>，会把 <strong>当前进程描述符</strong> 和 <strong>回调函数</strong> <code>default_wake_functon</code> 构造一个等待队列项，放入当前 <code>wq</code> 对待队列;</li>
+<li><strong>红黑树 <code>rbr</code>：</strong> 管理用户进程下添加进来的所有 <code>socket</code> 连接 <code>fd</code>;</li>
+<li><strong>就绪链表 <code>rdllist</code>：</strong> 当 <code>socket</code> 连接数据就绪的时候，内核会把就绪的 <code>socket</code> 连接放到 <code>rdllist</code> 链表里。这样应用进程只需要判断链表就能找出就绪进程，而不用去遍历整棵树。<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">eventpoll</span> &#123;</span><br><span class="line"> <span class="type">wait_queue_head_t</span> wq;      <span class="comment">// 等待队列链表，存放阻塞的进程</span></span><br><span class="line"></span><br><span class="line"> <span class="keyword">struct</span> <span class="title class_">list_head</span> rdllist;  <span class="comment">// 数据就绪的文件描述符都会放到这里</span></span><br><span class="line"></span><br><span class="line"> <span class="keyword">struct</span> <span class="title class_">rb_root</span> rbr;        <span class="comment">// 红黑树，管理用户进程下添加进来的所有 socket 连接 </span></span><br><span class="line">      ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<img src="https://picui.ogmua.cn/s1/2026/03/07/69ac27148b4b8.webp"></li>
+</ul>
+<h3 id="epoll-ctl"><a href="#epoll-ctl" class="headerlink" title="epoll_ctl"></a><code>epoll_ctl</code></h3><p><code>epoll_ctl</code> 函数主要负责把 <strong>服务端</strong> 和 <strong>客户端</strong> 建立的 <code>socket</code> 连接注册到 <code>eventpoll</code> 对象里，内核会做三件事：</p>
+<ul>
+<li><p>分配一个红黑树节点对象 <code>epitem</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">epitem</span> &#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">//红黑树节点</span></span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">rb_node</span> rbn;</span><br><span class="line"></span><br><span class="line">  <span class="comment">//socket文件描述符信息</span></span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">epoll_filefd</span> ffd;</span><br><span class="line"></span><br><span class="line">  <span class="comment">//所归属的 eventpoll 对象</span></span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">eventpoll</span> *ep;</span><br><span class="line"></span><br><span class="line">  <span class="comment">//等待队列</span></span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">list_head</span> pwqlist;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>添加等待事件到 <code>socket</code> 的等待队列中，其回调函数是 <code>ep_poll_callback</code>;</p>
+<blockquote>
+<p>这里添加的 <code>socket</code> 的进程等待队列结构中，只有回调函数，没有设置进程描述符，因为在 <code>epoll</code> 中，进程是放在 <code>eventpoll</code> 的等待队列中，等待被 <code>epoll_wait</code> 函数唤醒，而不是放在 <code>socket</code> 的进程等待队列中；</p>
+</blockquote>
+</li>
+<li><p>将 <code>epitem</code> 插入到 <code>epoll</code> 对象的红黑树里</p>
+</li>
+</ul>
+<p><img src="https://picui.ogmua.cn/s1/2026/03/07/69ac2af650e19.webp"></p>
+<h3 id="epoll-wait"><a href="#epoll-wait" class="headerlink" title="epoll_wait"></a><code>epoll_wait</code></h3><p><code>epoll_wait</code> 的逻辑比较简单：</p>
+<ul>
+<li>它先检查 <code>eventpoll</code> 对象的就绪链表 <code>rdllist</code> 中是否有就绪事件；<ul>
+<li>如果没有，就为当前进程构造一个等待队列项，并将其加入 <code>eventpoll</code> 的等待队列中，然后阻塞当前进程。</li>
+<li>当 <code>eventpoll</code> 监控的某个连接上 <strong>有数据到达</strong> 时，内核大致会按照下面的流程唤醒阻塞在 <code>epoll_wait</code> 上的进程：<ul>
+<li>数据到达 <code>socket</code> 的接收缓冲区后，会触发该 <code>socket</code> 等待队列上的回调函数 <code>ep_poll_callback。</code></li>
+<li><code>ep_poll_callback</code> 会找到对应的 <code>epitem</code>，并将其加入 <code>eventpoll</code> 对象的就绪队列 <code>rdllist</code> 中。</li>
+<li>随后，<code>ep_poll_callback</code> 会检查 <code>eventpoll</code> 的等待队列上是否有因调用 <code>epoll_wait</code> 而阻塞的进程；如果有，就通过 <code>default_wake_func</code> 将其唤醒。</li>
+<li>进程被唤醒后，会从 <code>epoll_wait</code> 挂起的位置继续执行。此时，<code>epoll_wait</code> 会将 <code>rdllist</code> 中的就绪事件返回给用户进程。</li>
+<li>用户进程拿到就绪事件后，再调用 <code>recv</code> 等接口，把已经到达内核 <code>socket</code> 接收缓冲区中的数据拷贝到用户空间，供业务代码处理。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://picui.ogmua.cn/s1/2026/03/07/69ac2f2417310.webp"></p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2188691">深入学习IO多路复用 select&#x2F;poll&#x2F;epoll 实现原理</a></li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://NeverGYu.github.io">NeverGYu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://nevergyu.github.io/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/IO%20%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/">https://nevergyu.github.io/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/IO%20%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://NeverGYu.github.io" target="_blank">GYu的妙妙屋</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></div><div class="post-share"><div class="social-share" data-image="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/03/05/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E8%BF%9B%E7%A8%8B%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" title="进程虚拟内存管理"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">进程虚拟内存管理</div></div><div class="info-2"><div class="info-item-1">1️⃣ 进程的虚拟地址空间 2️⃣ 内核如何管理进程？内核通过 task_strcut 来对进程进行管理&emsp;&emsp;因为在进程描述符 task_struct 结构中，有一个专门描述 进程虚拟地址空间 的内存描述符 mm_struct。由于每个进程都有唯一的 mm_struct 结构体，因此每个进程的虚拟地址空间都是 独立的。 12345678910struct task_struct &#123;    // 进程id	pid_t				pid;    // 用于标识线程所属的进程 pid	pid_t				tgid;    // 用于标识线程所属的进程 pid	pid_t				tgid;    // 内存描述符表示进程虚拟地址空间    struct mm_struct		*mm;&#125;；  子进程是如何被创建的？  调用 fork() 函数创建进程的时候， 子进程地址空间 的 mm_struct 结构会随着子进程描述符 task_struct 的创建而创建。 copy_process 函数中创建 task_struct...</div></div></div></a><a class="pagination-related" href="/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E9%9B%B6%E6%8B%B7%E8%B4%9D/" title="零拷贝"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">零拷贝</div></div><div class="info-2"><div class="info-item-1">1️⃣ 传统 I/O 过程在没有 DMA 技术之前，I/O 过程如下所述 (以 read 举例)：  用户执行系统调用 read：将控制权从 用户态 转换到 内核态，此时进程阻塞在这里。 CPU 向磁盘发送 I/O 请求：磁盘接收到 I/O 请求后，就需要的数据填充到自己的磁盘缓冲区，然后产生中断信号。 磁盘向 CPU 发送 I/O 中断信号： CPU 先就把磁盘缓冲区的数据一次一个字节的读进到自己的 寄存器。 再把 寄存器的数据 写入到 内存 中，但是传输过程中 CPU 无法执行其他任务。   系统调用 read 返回：将控制权从 内核态 转换到 用户态。   2️⃣ DMA 技术定义：&emsp;&emsp;在进行 I/O 设备和内存的数据传输的时候，数据搬运的工作全部交给 DMA 控制器，而 CPU 不再参与任何与数据搬运相关的事情，这样 CPU 就可以去处理别的事务。  用户执行系统调用 read：将控制权从 用户态 转换到 内核态，此时进程还是会阻塞在这里。 CPU 向 DMA 发送 I/O 请求：此时 CPU 就可以执行其他任务，搬运工作就交给 DMA。 DMA...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/03/01/%E5%85%AB%E8%82%A1%E5%B8%B8%E9%97%AE%E9%97%AE%E9%A2%98/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" title="操作系统常问问题"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-01</div><div class="info-item-2">操作系统常问问题</div></div><div class="info-2"><div class="info-item-1">虚拟内存1️⃣ 什么是虚拟地址？操作系统 为每个进程都分配了独立的 虚拟地址。并且，操作系统提供一种机制，将不同进程的虚拟地址和不同的物理内存地址映射起来。如果程序要访问虚拟地址，就由操作系统转换成不同的物理内存地址。 之后，进程持有的虚拟内存地址会通过 CPU 芯片中的 MMU 的映射关系，将其转换成物理内存地址。 作用： 虚拟内存可以使得进程对运行内存超过物理内存大小：  因为程序运行符合局部性原理，CPU 访问内存会有很明显的重复访问的倾向性 对于那些没有被经常使用到的内存，我们可以把它换出到物理内存之外，比如硬盘上的 swap 区域。   由于每个进程都有自己的页表，所以每个进程的虚拟内存空间就是相互独立的 页表里的页表项中除了物理地址之外，还有对页的标志位  2️⃣ 操作系统是如何管理虚拟地址与物理地址之间的关系？主要有两种方式，分别是 内存分段 和 内存分页 3️⃣ 分段机制下，虚拟地址和物理地址是如何映射的？分段机制下的虚拟地址由两部分组成，段选择因子 和 段内偏移量。 段选择因子 最重要的就是 段号，用作 段表 的索引。其中 段表 保存了 段的基地址 以及...</div></div></div></a><a class="pagination-related" href="/2026/03/05/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E8%BF%9B%E7%A8%8B%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" title="进程虚拟内存管理"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-05</div><div class="info-item-2">进程虚拟内存管理</div></div><div class="info-2"><div class="info-item-1">1️⃣ 进程的虚拟地址空间 2️⃣ 内核如何管理进程？内核通过 task_strcut 来对进程进行管理&emsp;&emsp;因为在进程描述符 task_struct 结构中，有一个专门描述 进程虚拟地址空间 的内存描述符 mm_struct。由于每个进程都有唯一的 mm_struct 结构体，因此每个进程的虚拟地址空间都是 独立的。 12345678910struct task_struct &#123;    // 进程id	pid_t				pid;    // 用于标识线程所属的进程 pid	pid_t				tgid;    // 用于标识线程所属的进程 pid	pid_t				tgid;    // 内存描述符表示进程虚拟地址空间    struct mm_struct		*mm;&#125;；  子进程是如何被创建的？  调用 fork() 函数创建进程的时候， 子进程地址空间 的 mm_struct 结构会随着子进程描述符 task_struct 的创建而创建。 copy_process 函数中创建 task_struct...</div></div></div></a><a class="pagination-related" href="/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E9%9B%B6%E6%8B%B7%E8%B4%9D/" title="零拷贝"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-07</div><div class="info-item-2">零拷贝</div></div><div class="info-2"><div class="info-item-1">1️⃣ 传统 I/O 过程在没有 DMA 技术之前，I/O 过程如下所述 (以 read 举例)：  用户执行系统调用 read：将控制权从 用户态 转换到 内核态，此时进程阻塞在这里。 CPU 向磁盘发送 I/O 请求：磁盘接收到 I/O 请求后，就需要的数据填充到自己的磁盘缓冲区，然后产生中断信号。 磁盘向 CPU 发送 I/O 中断信号： CPU 先就把磁盘缓冲区的数据一次一个字节的读进到自己的 寄存器。 再把 寄存器的数据 写入到 内存 中，但是传输过程中 CPU 无法执行其他任务。   系统调用 read 返回：将控制权从 内核态 转换到 用户态。   2️⃣ DMA 技术定义：&emsp;&emsp;在进行 I/O 设备和内存的数据传输的时候，数据搬运的工作全部交给 DMA 控制器，而 CPU 不再参与任何与数据搬运相关的事情，这样 CPU 就可以去处理别的事务。  用户执行系统调用 read：将控制权从 用户态 转换到 内核态，此时进程还是会阻塞在这里。 CPU 向 DMA 发送 I/O 请求：此时 CPU 就可以执行其他任务，搬运工作就交给 DMA。 DMA...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">NeverGYu</div><div class="author-info-description">纵使困顿难行，亦当砥砺奋进</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">42</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">28</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/NeverGYu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/NeverGYu" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is GYu Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1%EF%B8%8F%E2%83%A3-%E5%90%8C%E6%AD%A5%E9%98%BB%E5%A1%9E-IO"><span class="toc-number">1.</span> <span class="toc-text">1️⃣ 同步阻塞 IO</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%A0%E6%88%90%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.</span> <span class="toc-text">造成的问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2%EF%B8%8F%E2%83%A3-%E5%90%8C%E6%AD%A5%E9%9D%9E%E9%98%BB%E5%A1%9E-IO"><span class="toc-number">2.</span> <span class="toc-text">2️⃣ 同步非阻塞 IO</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%98%E7%82%B9"><span class="toc-number">2.1.</span> <span class="toc-text">优点</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%BA%E7%82%B9"><span class="toc-number">2.2.</span> <span class="toc-text">缺点</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3%EF%B8%8F%E2%83%A3-%E5%90%8C%E6%AD%A5%E9%98%BB%E5%A1%9E-IO-%E7%9A%84%E6%95%B0%E6%8D%AE%E6%8E%A5%E6%94%B6%E6%B5%81%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">3️⃣ 同步阻塞 IO 的数据接收流程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4%EF%B8%8F%E2%83%A3-IO-%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8"><span class="toc-number">4.</span> <span class="toc-text">4️⃣ IO 多路复用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89"><span class="toc-number">4.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#select-%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">4.2.</span> <span class="toc-text">select 的实现原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#select-%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">4.2.1.</span> <span class="toc-text">select 的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#fd-set"><span class="toc-number">4.2.2.</span> <span class="toc-text">fd_set</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%BA%E7%82%B9-1"><span class="toc-number">4.2.3.</span> <span class="toc-text">缺点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#poll-%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">4.3.</span> <span class="toc-text">poll 的实现原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#poll-%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">4.3.1.</span> <span class="toc-text">poll 的定义</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#epoll-%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">4.4.</span> <span class="toc-text">epoll 的实现原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%B9%E7%82%B9"><span class="toc-number">4.4.1.</span> <span class="toc-text">特点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%87%BD%E6%95%B0"><span class="toc-number">4.4.2.</span> <span class="toc-text">主要函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#epoll-create"><span class="toc-number">4.4.3.</span> <span class="toc-text">epoll_create</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#epoll-ctl"><span class="toc-number">4.4.4.</span> <span class="toc-text">epoll_ctl</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#epoll-wait"><span class="toc-number">4.4.5.</span> <span class="toc-text">epoll_wait</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="toc-number">5.</span> <span class="toc-text">参考文章</span></a></li></ol></div></div><div class="card-widget card-post-series"><div class="item-headline"><i class="fa-solid fa-layer-group"></i><span>系列文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/IO%20%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" title="IO 多路复用">IO 多路复用</a><time datetime="2026-03-07T02:00:00.000Z" title="发表于 2026-03-07 10:00:00">2026-03-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E9%9B%B6%E6%8B%B7%E8%B4%9D/" title="零拷贝">零拷贝</a><time datetime="2026-03-07T02:00:00.000Z" title="发表于 2026-03-07 10:00:00">2026-03-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/05/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E8%BF%9B%E7%A8%8B%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" title="进程虚拟内存管理">进程虚拟内存管理</a><time datetime="2026-03-05T02:00:00.000Z" title="发表于 2026-03-05 10:00:00">2026-03-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/01/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E4%BA%86%E8%A7%A3%20Linux%20%E9%98%B2%E7%81%AB%E5%A2%99/" title="了解 Linux 防火墙">了解 Linux 防火墙</a><time datetime="2026-03-01T02:00:00.000Z" title="发表于 2026-03-01 10:00:00">2026-03-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/20/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E9%93%BE%E6%8E%A5/" title="链接(link)">链接(link)</a><time datetime="2025-04-20T02:00:00.000Z" title="发表于 2025-04-20 10:00:00">2025-04-20</time></div></div></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/IO%20%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" title="IO 多路复用">IO 多路复用</a><time datetime="2026-03-07T02:00:00.000Z" title="发表于 2026-03-07 10:00:00">2026-03-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E9%9B%B6%E6%8B%B7%E8%B4%9D/" title="零拷贝">零拷贝</a><time datetime="2026-03-07T02:00:00.000Z" title="发表于 2026-03-07 10:00:00">2026-03-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/05/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E8%BF%9B%E7%A8%8B%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" title="进程虚拟内存管理">进程虚拟内存管理</a><time datetime="2026-03-05T02:00:00.000Z" title="发表于 2026-03-05 10:00:00">2026-03-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/01/%E5%85%AB%E8%82%A1%E5%B8%B8%E9%97%AE%E9%97%AE%E9%A2%98/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" title="操作系统常问问题">操作系统常问问题</a><time datetime="2026-03-01T04:00:00.000Z" title="发表于 2026-03-01 12:00:00">2026-03-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/01/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E4%BA%86%E8%A7%A3%20Linux%20%E9%98%B2%E7%81%AB%E5%A2%99/" title="了解 Linux 防火墙">了解 Linux 防火墙</a><time datetime="2026-03-01T02:00:00.000Z" title="发表于 2026-03-01 10:00:00">2026-03-01</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By NeverGYu</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script src="/styles/fish.js"></script><div class="aplayer no-destroy" data-id="2670158166" data-server="netease" data-type="song" data-fixed="true" data-autoplay="`true`"> </div><script defer="defer" id="fluttering_ribbon" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script id="click-heart" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-heart.min.js" async="async" mobile="false"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script>(() => {
+  const destroyAplayer = () => {
+    if (window.aplayers) {
+      for (let i = 0; i < window.aplayers.length; i++) {
+        if (!window.aplayers[i].options.fixed) {
+          window.aplayers[i].destroy()
+        }
+      }
+    }
+  }
+
+  const runMetingJS = () => {
+    typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+  }
+
+  btf.addGlobalFn('pjaxSend', destroyAplayer, 'destroyAplayer')
+  btf.addGlobalFn('pjaxComplete', loadMeting, 'runMetingJS')
+})()</script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => fn())
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false 
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
