@@ -1,13 +1,13 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>靖安科技 (一面) | GYu的妙妙屋</title><meta name="author" content="NeverGYu"><meta name="copyright" content="NeverGYu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="面试 用户鉴权 用的什么进行鉴权？鉴权方式是什么？证书鉴权的方式是什么？ 证书里面的内容是什么？基于什么的呢？ 你讲一下 策略拉取 具体由那些策略？ 网络访问策略还是路由策略？ 路由策略没有进行管理嘛？ 实现方式是什么？ libnft 的实现原理知道吗？ 现在我搭建了一个 openvpn 服务器，它是在互联网上的，现在用户 A 和用户 B ，他们如何通过 openvpn 将他们组建成一个虚拟局域网">
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>靖安科技 (一面) | GYu的妙妙屋</title><meta name="author" content="NeverGYu"><meta name="copyright" content="NeverGYu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="面试 用户鉴权 用的什么进行鉴权？鉴权方式是什么？证书鉴权的方式是什么？  两段式鉴权 业务登录鉴权：发生于 SDK 与 管理平台 之间  SDK 用 用户名&#x2F;密码 + optional TOTP 调 SDKAuth，用于确认 “这个人是不是合法用户”。 SDK 登录成功后，平台会下发 ca&#x2F; cert &#x2F;key&#x2F; server[]，客户端再用这些材料去建立">
 <meta property="og:type" content="article">
 <meta property="og:title" content="靖安科技 (一面)">
 <meta property="og:url" content="https://nevergyu.github.io/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/%E9%9D%96%E5%AE%89%E7%A7%91%E6%8A%80/index.html">
 <meta property="og:site_name" content="GYu的妙妙屋">
-<meta property="og:description" content="面试 用户鉴权 用的什么进行鉴权？鉴权方式是什么？证书鉴权的方式是什么？ 证书里面的内容是什么？基于什么的呢？ 你讲一下 策略拉取 具体由那些策略？ 网络访问策略还是路由策略？ 路由策略没有进行管理嘛？ 实现方式是什么？ libnft 的实现原理知道吗？ 现在我搭建了一个 openvpn 服务器，它是在互联网上的，现在用户 A 和用户 B ，他们如何通过 openvpn 将他们组建成一个虚拟局域网">
+<meta property="og:description" content="面试 用户鉴权 用的什么进行鉴权？鉴权方式是什么？证书鉴权的方式是什么？  两段式鉴权 业务登录鉴权：发生于 SDK 与 管理平台 之间  SDK 用 用户名&#x2F;密码 + optional TOTP 调 SDKAuth，用于确认 “这个人是不是合法用户”。 SDK 登录成功后，平台会下发 ca&#x2F; cert &#x2F;key&#x2F; server[]，客户端再用这些材料去建立">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png">
 <meta property="article:published_time" content="2026-03-23T04:00:00.000Z">
-<meta property="article:modified_time" content="2026-03-24T17:10:55.717Z">
+<meta property="article:modified_time" content="2026-03-25T03:58:02.342Z">
 <meta property="article:author" content="NeverGYu">
 <meta property="article:tag" content="项目面经">
 <meta name="twitter:card" content="summary">
@@ -18,7 +18,7 @@
   "url": "https://nevergyu.github.io/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/%E9%9D%96%E5%AE%89%E7%A7%91%E6%8A%80/",
   "image": "https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png",
   "datePublished": "2026-03-23T04:00:00.000Z",
-  "dateModified": "2026-03-24T17:10:55.717Z",
+  "dateModified": "2026-03-25T03:58:02.342Z",
   "author": [
     {
       "@type": "Person",
@@ -180,36 +180,173 @@
     btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
     btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
   }
-})()</script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">54</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">36</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/我妻善意.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" alt="Logo"><span class="site-name">GYu的妙妙屋</span></a><a class="nav-page-title" href="/"><span class="site-name">靖安科技 (一面)</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">靖安科技 (一面)</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-24T17:10:55.717Z" title="更新于 2026-03-25 01:10:55">2026-03-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/">项目面经</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="面试"><a href="#面试" class="headerlink" title="面试"></a>面试</h1><ul>
-<li><strong>用户鉴权</strong> 用的什么进行鉴权？鉴权方式是什么？证书鉴权的方式是什么？</li>
-<li>证书里面的内容是什么？基于什么的呢？</li>
-<li>你讲一下 <strong>策略拉取</strong> 具体由那些策略？</li>
-<li>网络访问策略还是路由策略？</li>
-<li>路由策略没有进行管理嘛？</li>
-<li>实现方式是什么？</li>
-<li><code>libnft</code> 的实现原理知道吗？</li>
-<li>现在我搭建了一个 <code>openvpn</code> 服务器，它是在互联网上的，现在用户 <code>A</code> 和用户 <code>B</code> ，他们如何通过 <code>openvpn</code> 将他们组建成一个虚拟局域网里呢？让 <code>A</code> 和 <code>B</code> 之间可以进行点对点通信？</li>
-<li><strong>流量解析</strong> 是如何做的呢？</li>
-<li><strong>日志投递</strong> 具体指的是什么？</li>
-<li>为什么选择 <code>kafka</code> 做日志投递？</li>
-<li><code>kafka</code> 顺序写入以及多 <code>Broker</code> 的情况，<code>kafka</code> 会进行多分批发送，<code>kafka</code> 怎么保证顺序呢？</li>
-<li><code>kafka</code> 分区你通常设置成多少个呢？</li>
-<li>介绍一下基于 <code>N:M</code> 线程模型的高性能服务器框架？</li>
-<li>讲解一下线程池如何调度协程任务的嘛？</li>
-<li>线程和协程的区别是什么？优劣是什么？</li>
-<li>如果只用多线程做协程调度器，它为什么就没有因为上下文造成的影响呢？</li>
-<li>你没有解释如何抵消线程进行切换造成的影响？</li>
-<li>现在有 1000 个连接需要你去处理，你现在用线程调度器去都调度你的协程，平均你每个线程需要你去调度多少个协程呢？要启动多少个线程呢？</li>
-<li>现在我再具体一点，现在我有 1000 个协程任务，你现在要协调都多少个线程来协调多少个协程来达到最高的效率呢？</li>
-<li>你怎么知道调度那些协程到那些线程呢？</li>
-<li>多线程&#x2F;多协程的场景下，如果你的程序异常崩溃了，你去怎么排查？</li>
-<li><code>gdb</code> 怎么找到死锁的原因？</li>
-<li>怎么看出来 <strong>内存泄漏</strong>？</li>
-<li>内存非法访问怎么查看的？</li>
-<li>死在代码行上但是你看不出来？</li>
-<li>有什么情况，调用成员函数会直接使得程序崩溃？</li>
-<li>可插拔中间件机制是什么？</li>
-<li>反问：没能很好的表达你在项目中的细节，你在这个项目能做到多深？</li>
+})()</script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">54</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">36</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/我妻善意.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" alt="Logo"><span class="site-name">GYu的妙妙屋</span></a><a class="nav-page-title" href="/"><span class="site-name">靖安科技 (一面)</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">靖安科技 (一面)</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-25T03:58:02.342Z" title="更新于 2026-03-25 11:58:02">2026-03-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/">项目面经</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="面试"><a href="#面试" class="headerlink" title="面试"></a>面试</h1><ul>
+<li><p><strong>用户鉴权</strong> 用的什么进行鉴权？鉴权方式是什么？证书鉴权的方式是什么？</p>
+<ul>
+<li><strong>两段式鉴权</strong><ul>
+<li><p>业务登录鉴权：发生于 <code>SDK</code> 与 <strong>管理平台</strong> 之间</p>
+<ul>
+<li><code>SDK</code> 用 <strong>用户名&#x2F;密码</strong> + <code>optional TOTP</code> 调 <code>SDKAuth</code>，用于确认 <strong>“这个人是不是合法用户”</strong>。</li>
+<li><code>SDK</code> 登录成功后，平台会下发 <code>ca</code>&#x2F; <code>cert</code> &#x2F;<code>key</code>&#x2F; <code>server[]</code>，客户端再用这些材料去建立 <code>OpenVPN</code> 实例去建立连接。</li>
+</ul>
+</li>
+<li><p><code>VPN</code> 接入鉴权：发生于 <code>OpenVPN</code> 插件与 <strong>管理平台</strong> 之间</p>
+<ul>
+<li>到了服务端，插件在 <code>TLS_VERIFY</code> 阶段取客户端证书的 **序列号 <code>SN</code> 和 <code>CN</code>**，再调用同步 <code>RPC</code> 方法 <code>CertStatus</code> 查询这个证书当前是不是有效、属于哪个实体、对应哪个用户。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>所以插件做的主鉴权不是用户名&#x2F;密码，而是：<ul>
+<li><code>mTLS</code> 握手</li>
+<li>远端证书状态校验。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>证书里面的内容是什么？基于什么的呢？</p>
+<ul>
+<li>这套系统底层是基于 <code>X.509</code> 证书 + <code>PKI/CA</code> 体系 的 <code>OpenVPN</code> 双向 <code>TLS</code>。</li>
+<li>插件实际会读取证书里的 <code>CN</code> 和 <code>SN</code></li>
+<li><code>X.509</code> 证书主要包含：<ul>
+<li><code>Subject</code>（主体）</li>
+<li><code>Issuer</code>（签发者）</li>
+<li><code>Serial Number</code>（序列号）</li>
+<li><code>Validity</code>（有效期）</li>
+<li><code>Public Key</code>（公钥）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>你讲一下 <strong>策略拉取</strong> 具体由那些策略？</p>
+<ul>
+<li>本质上是用户访问控制策略，主要包括：<ul>
+<li><strong>拒绝策略</strong> <code>refusePolicy</code></li>
+<li><strong>路由规则</strong> <code>routeRule</code></li>
+<li><strong>限制速率</strong> <code>rateLimit</code></li>
+<li><strong>时间窗</strong> <code>hourFrom/hourTo</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>网络访问策略还是路由策略？</p>
+<ul>
+<li>插件拉取的是 <strong>网络访问策略</strong>，插件拿到策略后，是用 <code>nftables</code> 做：<ul>
+<li>允许哪些目的网段；</li>
+<li>允许哪些 <code>TCP</code>&#x2F;<code>UDP</code> 端口；</li>
+<li>允许哪些 <code>ICMP</code> 类型；</li>
+<li>超过速率怎么处理；</li>
+<li>到期后怎么拒绝；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>路由策略没有进行管理嘛？</p>
+<ul>
+<li><strong>有路由管理，但不在插件这一层。</strong> </li>
+<li><strong>路由配置</strong> 是在托管节点生成 <code>OpenVPN</code> 服务端通过配置进行管理的。<ul>
+<li>插件负责用户访问控制；</li>
+<li><code>OpenVPN</code> 服务配置负责路由下发；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>实现方式是什么？</p>
+<ul>
+<li>插件先拉用户策略，再把策略编译成 <code>nftables</code> 规则下发到 <code>Linux</code> 内核。</li>
+<li>大致流程：<ul>
+<li>客户端证书校验通过后，插件识别出 <code>userId</code>；</li>
+<li>异步调用 <code>UserAccessRules(userId)</code>；</li>
+<li>等 <code>OpenVPN</code> 在 <code>LEARN_ADDRESS</code> 事件拿到这个用户的虚拟 <code>IP</code>；</li>
+<li>把 <code>UserAccessRules</code> 转成 <code>vpn_access_rules</code>；</li>
+<li>调 <code>nft_adaptor.add_vpn_user_filter</code>；</li>
+<li>为这个用户建立独立规则链；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><code>libnft</code> 的实现原理知道吗？</p>
+<ul>
+<li>用户态先构造规则；</li>
+<li><code>libnftables</code> 解析&#x2F;编译规则；</li>
+<li>通过 <code>netlink</code> 把规则发给内核里的 <code>nf_tables</code>；</li>
+<li>内核在 <code>Netfilter</code> <code>hook</code> 点上执行这些规则；</li>
+</ul>
+</li>
+<li><p>现在我搭建了一个 <code>openvpn</code> 服务器，它是在互联网上的，现在用户 <code>A</code> 和用户 <code>B</code> ，他们如何通过 <code>openvpn</code> 将他们组建成一个虚拟局域网里呢？让 <code>A</code> 和 <code>B</code> 之间可以进行点对点通信？</p>
+<ul>
+<li>官方手册明确说，<code>client-to-client</code> 会让 <code>openVPN</code> 服务端可以在内部路由客户端之间的流量；</li>
+<li>否则客户端通常只能“看见服务器”；</li>
+</ul>
+</li>
+<li><p><strong>流量解析</strong> 是如何做的呢？</p>
+<ul>
+<li><code>OpenVPN</code> 启动完成后，插件在 <code>OPENVPN_PLUGIN_ROUTE_UP</code> 事件里取到设备名 <code>dev</code>；</li>
+<li><code>tcap</code> 用 <code>PcapPlusPlus</code> 在这个网卡上做 <code>live capture</code>；</li>
+<li>把原始包解析成 <strong>多层协议对象</strong>；</li>
+<li>解析到哪一层由配置 <code>parseUntil</code> 决定；</li>
+<li>当前支持解析的内容包括：<code>Ethernet</code>、<code>IPv4/IPv6</code>、<code>TCP/UDP</code>、<code>ICMP</code> 等等；</li>
+<li>插件再根据 <code>src/dst VIP</code> 去本地在线用户表里补齐 <code>vpn_user</code> 字段；</li>
+<li>最后把整条记录序列化成 <code>JSON</code> 发到 <code>Kafka</code>；</li>
+</ul>
+</li>
+<li><p><strong>日志投递</strong> 具体指的是什么？</p>
+<ul>
+<li><strong>服务日志：</strong> <code>OpenVPN</code> 服务端本身的<strong>运行日志</strong>、<strong>错误日志</strong>；</li>
+<li><strong>流量审计日志：</strong> 插件抓包解析后生成的 <code>JSON</code> 事件；</li>
+</ul>
+</li>
+<li><p>为什么选择 <code>kafka</code> 做日志投递？</p>
+<ul>
+<li><strong>解耦：</strong> 避免插件直接依赖某个日志平台的写入接口；</li>
+<li><strong>削峰缓冲：</strong> <code>VPN</code> 流量是突发的，<code>Kafka</code> 更适合扛 burst，避免反压直接打到接入链路。</li>
+<li><strong>多消费者复用：</strong> 安全、审计、运维、风控都可以各自消费同一份数据。</li>
+<li><strong>可回放：</strong> 出现安全事件时可以重放历史流量事件做追查。</li>
+</ul>
+</li>
+<li><p><code>kafka</code> 顺序写入以及多 <code>Broker</code> 的情况，<code>kafka</code> 会进行多分批发送，<code>kafka</code> 怎么保证顺序呢？</p>
+<ul>
+<li><code>Kafka</code> 只保证 “单个 <code>partition</code> 内” 的顺序，不保证跨 <code>partition</code> 的全局顺序。</li>
+<li>同一个 <code>topic</code> 下的 <code>partition</code>，事件会按写入顺序追加，消费者也按这个顺序读取。</li>
+</ul>
+</li>
+<li><p><code>kafka</code> 分区你通常设置成多少个呢？</p>
+<ul>
+<li>不太了解，通常托管节点下发给插件的配置</li>
+</ul>
+</li>
+<li><p>介绍一下基于 <code>N:M</code> 线程模型的高性能服务器框架？</p>
+</li>
+<li><p>讲解一下线程池如何调度协程任务的嘛？</p>
+</li>
+<li><p>线程和协程的区别是什么？优劣是什么？</p>
+</li>
+<li><p>如果只用多线程做协程调度器，它为什么就没有因为上下文造成的影响呢？</p>
+</li>
+<li><p>你没有解释如何抵消线程进行切换造成的影响？</p>
+</li>
+<li><p>现在有 1000 个连接需要你去处理，你现在用线程调度器去都调度你的协程，平均你每个线程需要你去调度多少个协程呢？要启动多少个线程呢？</p>
+</li>
+<li><p>现在我再具体一点，现在我有 1000 个协程任务，你现在要协调都多少个线程来协调多少个协程来达到最高的效率呢？</p>
+</li>
+<li><p>你怎么知道调度那些协程到那些线程呢？</p>
+</li>
+<li><p>多线程&#x2F;多协程的场景下，如果你的程序异常崩溃了，你去怎么排查？</p>
+</li>
+<li><p><code>gdb</code> 怎么找到死锁的原因？</p>
+</li>
+<li><p>怎么看出来 <strong>内存泄漏</strong>？</p>
+</li>
+<li><p>内存非法访问怎么查看的？</p>
+</li>
+<li><p>死在代码行上但是你看不出来？</p>
+</li>
+<li><p>有什么情况，调用成员函数会直接使得程序崩溃？</p>
+</li>
+<li><p>可插拔中间件机制是什么？</p>
+</li>
+<li><p>反问：没能很好的表达你在项目中的细节，你在这个项目能做到多深？</p>
+</li>
 </ul>
 </article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://NeverGYu.github.io">NeverGYu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://nevergyu.github.io/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/%E9%9D%96%E5%AE%89%E7%A7%91%E6%8A%80/">https://nevergyu.github.io/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/%E9%9D%96%E5%AE%89%E7%A7%91%E6%8A%80/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://NeverGYu.github.io" target="_blank">GYu的妙妙屋</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/">项目面经</a></div><div class="post-share"><div class="social-share" data-image="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91/" title="csig_腾讯视频 (一面凉经)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">csig_腾讯视频 (一面凉经)</div></div><div class="info-2"><div class="info-item-1">面试问题 有没有实际上有用户使用这个 vpn，插件是不是只是把客户端上报的数据存储起来？是线上的业务嘛？ grpc 同步和异步通信框架怎么去实现的？原来是什么样的？提升了什么性能？ 客户端和后台是通过什么方式连接的？长连接还是短连接？通过域名嘛？ 客户端直接通过配置保存服务端的 ip:port， 后台的 ip:port 变更了，这种场景下有做策略嘛？如果去优化，有没有想过就算是服务器的 ip:port 迁移了，客户端仍然可以去连接上服务器？ 实时抓包解析和 kafka 日志投递，有没有想过为什么要用 kafka？有没有想过为什么不直接投递到日志平台？ 面试官说害怕 Producer 扛不住，所以它把所有的日志都暂存在 kafka，使得 Producer 可以保持自己正常的负载，正常的运行。   介绍一下 N : M 线程模型框架？ 协程阻塞后，让出协程，怎么保证阻塞协程的状态的？ 有没有压测过？并发量大概能到达多少？线程拿的到协程在执行什么任务？有没有关注过你这个 QPS...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91/" title="csig_腾讯视频 (一面凉经)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-23</div><div class="info-item-2">csig_腾讯视频 (一面凉经)</div></div><div class="info-2"><div class="info-item-1">面试问题 有没有实际上有用户使用这个 vpn，插件是不是只是把客户端上报的数据存储起来？是线上的业务嘛？ grpc 同步和异步通信框架怎么去实现的？原来是什么样的？提升了什么性能？ 客户端和后台是通过什么方式连接的？长连接还是短连接？通过域名嘛？ 客户端直接通过配置保存服务端的 ip:port， 后台的 ip:port 变更了，这种场景下有做策略嘛？如果去优化，有没有想过就算是服务器的 ip:port 迁移了，客户端仍然可以去连接上服务器？ 实时抓包解析和 kafka 日志投递，有没有想过为什么要用 kafka？有没有想过为什么不直接投递到日志平台？ 面试官说害怕 Producer 扛不住，所以它把所有的日志都暂存在 kafka，使得 Producer 可以保持自己正常的负载，正常的运行。   介绍一下 N : M 线程模型框架？ 协程阻塞后，让出协程，怎么保证阻塞协程的状态的？ 有没有压测过？并发量大概能到达多少？线程拿的到协程在执行什么任务？有没有关注过你这个 QPS...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">NeverGYu</div><div class="author-info-description">纵使困顿难行，亦当砥砺奋进</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">54</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">36</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/NeverGYu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/NeverGYu" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is GYu Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%9D%A2%E8%AF%95"><span class="toc-number">1.</span> <span class="toc-text">面试</span></a></li></ol></div></div><div class="card-widget card-post-series"><div class="item-headline"><i class="fa-solid fa-layer-group"></i><span>系列文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91/" title="csig_腾讯视频 (一面凉经)">csig_腾讯视频 (一面凉经)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/%E9%9D%96%E5%AE%89%E7%A7%91%E6%8A%80/" title="靖安科技 (一面)">靖安科技 (一面)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91/" title="csig_腾讯视频 (一面凉经)">csig_腾讯视频 (一面凉经)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/%E9%9D%96%E5%AE%89%E7%A7%91%E6%8A%80/" title="靖安科技 (一面)">靖安科技 (一面)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/18/%E9%9D%A2%E7%BB%8F/csig_0318/" title="面经 csig_0318">面经 csig_0318</a><time datetime="2026-03-18T02:00:00.000Z" title="发表于 2026-03-18 10:00:00">2026-03-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/18/%E9%9D%A2%E7%BB%8F/csig_0318_02/" title="面经 csig_0318">面经 csig_0318</a><time datetime="2026-03-18T02:00:00.000Z" title="发表于 2026-03-18 10:00:00">2026-03-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/12/%E9%9D%A2%E7%BB%8F/wxg_0312/" title="面经 wxg_0312">面经 wxg_0312</a><time datetime="2026-03-12T02:00:00.000Z" title="发表于 2026-03-12 10:00:00">2026-03-12</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By NeverGYu</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script src="/styles/fish.js"></script><div class="aplayer no-destroy" data-id="2670158166" data-server="netease" data-type="song" data-fixed="true" data-autoplay="`true`"> </div><script defer="defer" id="fluttering_ribbon" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script id="click-heart" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-heart.min.js" async="async" mobile="false"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script>(() => {
   const destroyAplayer = () => {
