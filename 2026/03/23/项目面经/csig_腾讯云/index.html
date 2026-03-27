@@ -1,0 +1,619 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>csig_腾讯云(一面) | GYu的妙妙屋</title><meta name="author" content="NeverGYu"><meta name="copyright" content="NeverGYu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="面经C++ 八股 继承和多态这种面向对象的设计？（把共同点抽出来复用，把不同点留给子类自己实现） 多态解决了什么问题，C++ 为什么要使用多态？ 多态：主要用于对同一个接口，进行不同的实现； C++ 使用多态主要是解决代码复用；   不用继承，多态的这种设计应该怎么做呢？ 静态多态：模板、函数重载、工厂函数   多态的虚函数可以是内联函数嘛？ 虚函数可以是内联函数，类内定义的成员函数默认就有 in">
+<meta property="og:type" content="article">
+<meta property="og:title" content="csig_腾讯云(一面)">
+<meta property="og:url" content="https://nevergyu.github.io/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91/index.html">
+<meta property="og:site_name" content="GYu的妙妙屋">
+<meta property="og:description" content="面经C++ 八股 继承和多态这种面向对象的设计？（把共同点抽出来复用，把不同点留给子类自己实现） 多态解决了什么问题，C++ 为什么要使用多态？ 多态：主要用于对同一个接口，进行不同的实现； C++ 使用多态主要是解决代码复用；   不用继承，多态的这种设计应该怎么做呢？ 静态多态：模板、函数重载、工厂函数   多态的虚函数可以是内联函数嘛？ 虚函数可以是内联函数，类内定义的成员函数默认就有 in">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png">
+<meta property="article:published_time" content="2026-03-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-03-27T13:33:37.995Z">
+<meta property="article:author" content="NeverGYu">
+<meta property="article:tag" content="项目面经">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "csig_腾讯云(一面)",
+  "url": "https://nevergyu.github.io/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91/",
+  "image": "https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png",
+  "datePublished": "2026-03-23T04:00:00.000Z",
+  "dateModified": "2026-03-27T13:33:37.995Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "NeverGYu",
+      "url": "https://nevergyu.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/image/%E9%AA%B7%E9%AB%85%E9%AD%94%E6%9C%AF%E5%B8%88.png"><link rel="canonical" href="https://nevergyu.github.io/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'csig_腾讯云(一面)',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/styles/main.css"><script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load', preloader.endLoading)
+
+  if (true) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">56</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/我妻善意.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" alt="Logo"><span class="site-name">GYu的妙妙屋</span></a><a class="nav-page-title" href="/"><span class="site-name">csig_腾讯云(一面)</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">csig_腾讯云(一面)</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-27T13:33:37.995Z" title="更新于 2026-03-27 21:33:37">2026-03-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/">项目面经</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="面经"><a href="#面经" class="headerlink" title="面经"></a>面经</h1><h2 id="C-八股"><a href="#C-八股" class="headerlink" title="C++ 八股"></a>C++ 八股</h2><ul>
+<li>继承和多态这种面向对象的设计？（把共同点抽出来复用，把不同点留给子类自己实现）</li>
+<li>多态解决了什么问题，<code>C++</code> 为什么要使用多态？<ul>
+<li>多态：主要用于对同一个接口，进行不同的实现；</li>
+<li><code>C++</code> 使用多态主要是解决代码复用；</li>
+</ul>
+</li>
+<li>不用继承，多态的这种设计应该怎么做呢？<ul>
+<li>静态多态：模板、函数重载、工厂函数</li>
+</ul>
+</li>
+<li>多态的虚函数可以是内联函数嘛？<ul>
+<li>虚函数可以是内联函数，类内定义的成员函数默认就有 <code>inline</code> 属性，在语法上完全没问题；</li>
+<li><strong>“能声明成 <code>inline</code>”</strong> 和 <strong>“调用时真的被内联展开”</strong> 不是一回事。<blockquote>
+<p><code>inline</code> 本质上只是给编译器一个建议</p>
+</blockquote>
+</li>
+<li>虚函数在通过 <strong>父类指针</strong>&#x2F;<strong>引用调用</strong>时，是 <strong>运行时动态绑定</strong>，编译器在 <strong>编译阶段</strong> 通常不知道最终会调用哪个版本，所以一般不能直接内联；</li>
+</ul>
+</li>
+<li>纯虚函数是干嘛的？<ul>
+<li>这个行为必须有，但父类没法给出通用实现；</li>
+<li>纯虚函数不可以被实例化；</li>
+<li>强制子类实现接口，子类没有实现父类的纯虚函数，那子类自己也还是抽象类。</li>
+</ul>
+</li>
+<li><code>STL</code> 了解吧，一起讲 <code>map</code> 和 <code>unordered_map</code><ul>
+<li><code>map</code><ul>
+<li>底层使用 <strong>红黑树</strong>；</li>
+<li>按 <code>key</code> 是有序的；</li>
+<li>插入和查找的复杂度 <code>O(N)</code></li>
+</ul>
+</li>
+<li><code>unordered_map</code><ul>
+<li>底层使用 <strong>哈希表</strong>；</li>
+<li>按 <code>key</code> 是无序的；</li>
+<li>插入和查找的平均复杂度 <code>O(1)</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>是线程安全的嘛？（<code>STL</code> 中的实现不是线程安全的，需要自己进行加锁）</li>
+<li>有哪些手段实现访问 <code>STL</code> 是线程安全的？<ul>
+<li>外部加锁</li>
+<li>通过原子变量实现无锁 <code>STL</code></li>
+</ul>
+</li>
+<li>分别讲解一下 <strong>自旋锁</strong> 和 <strong>读写锁</strong> 的使用场景？<ul>
+<li>自旋锁：<ul>
+<li>使用场景：<strong>临界区非常短、锁持有时间很短、竞争不重、线程很快就能拿到锁</strong>；</li>
+</ul>
+</li>
+<li>读写锁：<ul>
+<li>使用场景：<strong>读多写少</strong>，多个线程可以同时拿共享读锁，但写锁必须独占。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="项目"><a href="#项目" class="headerlink" title="项目"></a>项目</h2><ul>
+<li>进程、线程、协程的区别？<ul>
+<li>进程：资源分配的基本单位<ul>
+<li>拥有独立的资源：文件描述符、虚拟内存地址空间、页表；</li>
+<li>切换开销最大；</li>
+<li>适合强隔离任务，防止以后模块影响另一个模块；</li>
+</ul>
+</li>
+<li>线程：<code>CPU</code> 调度的基本单位<ul>
+<li>共享进程的资源：地址空间、堆、全局变量、打开的文件</li>
+<li>自己的资源：程序计数器、线程栈、寄存器</li>
+<li>切换开销小于进程；</li>
+<li>适合利用多核并行执行任务；</li>
+</ul>
+</li>
+<li>协程：用户态线程，程序员自己进行保存协程的上下文<ul>
+<li>共享线程的资源：一个线程里可以跑很多协程；</li>
+<li>自己的资源：协程栈、程序计数器、寄存器；</li>
+<li>切换开销最小；</li>
+<li>适合大量 <code>I/O</code> 并发任务；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>进程、线程、协程的上下文是什么呢？<ul>
+<li>进程：<ul>
+<li><code>CPU</code> 执行现场:<ul>
+<li>程序计数器</li>
+<li>通用寄存器</li>
+<li>栈指针 <code>sp</code></li>
+<li>内核栈信息</li>
+</ul>
+</li>
+<li>进程运行环境：<ul>
+<li>虚拟内存空间</li>
+<li>页表项</li>
+<li>管理的文件描述符</li>
+<li>进程控制块 <code>PCB</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>线程：<ul>
+<li>共享进程的资源</li>
+<li>私有资源：<ul>
+<li>程序计数器、线程栈、寄存器、线程控制块 <code>pcb</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>协程：<ul>
+<li>共享进程&#x2F;进程的资源</li>
+<li>私有资源：<ul>
+<li>协程栈、程序计数器、寄存器</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>有栈协程和无栈协程的区别？<ul>
+<li>有栈协程：<ul>
+<li>独立的栈空间</li>
+<li>栈指针</li>
+<li>调用链</li>
+<li>内存开销更大、切换不灵活</li>
+</ul>
+</li>
+<li>无栈协程：<ul>
+<li>没有独立调用栈</li>
+<li>必要状态保存到一个对象里，通常像状态机</li>
+<li>一个可暂停、可恢复的函数状态对象</li>
+<li>内存开销更小、切换灵活、但是只能在特定挂起点挂起</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>你有没有对这个协程服务器进行调研选型？这方面的轮子不少，为什么想自己做一个？<ul>
+<li>调研过一些网络库的实现，比如 <code>muduo</code> 网络库，它主要用于 <strong>主从多 <code>Reaactor</code></strong> 模式；</li>
+<li>我做这个项目不是为了替代成熟框架，而是为了在一个可控的小系统里吃透协程调度和网络模型，并验证关键设计；</li>
+<li>如果是生产优先场景，我会更倾向直接用成熟框架。</li>
+</ul>
+</li>
+<li>你有没有针对性各个模块设计一些测试用例去自测功能，看看是不是完备的，或者说对你这服务器有没有验证性能是符合你自己要求的？<ul>
+<li>有做过<ul>
+<li>针对于每个模块，我都会去写测试样例，去验证这个模块是否是符合我的预期的，比如协程，我会去调用多个协程，去查看调用链是否是正确的；</li>
+<li>针对这个服务器的性能，我主要是做了 <code>Apach Benchmark</code>，去查看了一下相关的指标，主要是看看在不同并发程度下系统什么时候出现瓶颈，瓶颈是在 <code>I/O</code>、<strong>调度器调度不过来了</strong> 还是 <strong>锁竞争</strong>。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>协程被饿死或者线程上的协程负载不均，现在交给你这个任务，你要去覆盖这种用例以及针对性的去评估这方面的性能，你觉得你会怎么去做？<ul>
+<li>问题描述：<ul>
+<li>针对我这个项目，协程确实会发生 <strong>协程饿死</strong><ul>
+<li>我的协程是非抢占式的，只要某个协程长期不 <code>yield</code>，它所在的线程上其他协程就可能被拖死。</li>
+</ul>
+</li>
+<li>针对我这个项目，同样会发生 <strong>线程上的协程负载不均</strong><ul>
+<li>因为我使用的是 <strong>全局任务队列</strong>，可能会发生某个线程刚好比较快，连续抢到很多任务以及某个线程刚好在忙，抢不到新任务。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>方案评估<ul>
+<li>首先会做的是 <strong>补观测指标</strong><ul>
+<li><strong>A.</strong> 比如说给 <strong>协程</strong> 添加一个时间戳：<ul>
+<li>创建时间：<code>create_time</code>；</li>
+<li>单次调度等待时延：<code>enqueue_time</code>；</li>
+<li>首次运行时间：<code>first_run_ts</code>；</li>
+<li>终止运行时间：<code>finish_ts</code>；</li>
+</ul>
+</li>
+<li><strong>B.</strong> 协程的调度行为：<ul>
+<li>被调度次数 </li>
+<li>主动 <code>yield</code> 次数</li>
+<li>因 <code>IO</code> 挂起次数</li>
+<li>恢复次数</li>
+<li>连续运行时长最大值<blockquote>
+<p>如果某个协程连续运行很久几乎不 <code>yield</code> 那它就是 <strong>“疑似霸占线程”</strong> 的元凶。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>C.</strong> 每个线程的负载指标<ul>
+<li>执行的协程数</li>
+<li>累计运行时间</li>
+<li><code>idle</code> 时间</li>
+<li><code>epoll</code> 唤醒次数</li>
+<li>平均队列等待时间</li>
+</ul>
+</li>
+<li><strong>D.</strong> 调度器的指标<ul>
+<li>全局队列长度</li>
+<li>队列长度峰值</li>
+<li><code>ready</code> 协程数</li>
+<li><code>pending IO</code> 数</li>
+<li><code>tickle</code> 次数</li>
+<li>空唤醒次数</li>
+<li>每秒调度次数</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>覆盖测试样例<ul>
+<li>样例一：单个 <strong>“坏协程”</strong> 霸占线程<ul>
+<li>验证：没有时间片时，单协程是否会饿死同线程其他协程</li>
+<li>做法：<ul>
+<li><code>1</code> 个 <code>CPU</code> 密集协程：死循环计算 <code>200ms</code>，不主动 <code>yield</code>；</li>
+<li><code>100</code> 个轻协程：每个只做很少计算，然后 <code>yield</code>；</li>
+<li><code>100</code> 个 <code>IO</code> 协程：定时器&#x2F;<code>pipe</code>&#x2F;<code>loopback</code>&#x2F;<code>socket</code> 周期唤醒</li>
+</ul>
+</li>
+<li>查看：<ul>
+<li><strong>坏协程</strong> 所在线程的其他协程等待时间是否暴涨；</li>
+<li>是否出现 <strong>“<code>ready</code> 很久但一直没运行”</strong> 的协程；</li>
+<li>线程间是否出现明显失衡；</li>
+</ul>
+</li>
+<li>样例二：热点连接集中到同一个线程<ul>
+<li>验证：某一批高频活跃连接是否会长期压在同一个线程上，导致该线程过热、其他线程空闲</li>
+<li>做法：<ul>
+<li><code>4</code> 个工作线程；</li>
+<li><code>1000</code> 个连接，其中：<ul>
+<li><code>800</code> 个高频连接：持续小包收发，周期性触发可读&#x2F;可写事件；</li>
+<li><code>200</code> 个低频连接：低频发送或基本空闲；</li>
+</ul>
+</li>
+<li>故意让这 <code>800</code> 个高频连接优先由同一个线程 <code>accept</code> 或恢复；</li>
+<li>或者在 <code>schedule</code> 时，把大部分高频协程指定到同一个 <code>threadid</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>讲一下 <code>IO</code> 多路复用以及 <code>epoll</code> 的底层机制？<ul>
+<li><code>IO</code> 多路复用：使用一个线程来管理多个 <code>socket</code> 连接</li>
+<li><code>epoll</code>:<ul>
+<li><strong>红黑树：</strong> 管理 <code>socket</code>；</li>
+<li><strong>就绪链表：</strong> 放入已经就绪的连接；</li>
+<li><strong>等待队列：</strong> 放入 <code>socket</code> 的进程 <code>id</code>以及对应的回调函数用于唤醒该进程</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>你刚才讲了一下从网卡这个入口，讲了一下 <code>epoll</code> <code>IO</code> 多路复用的处理的逻辑链条，但是 <code>epoll</code> 只能通过网卡触发嘛，还是可以通过别的入口进到这个处理流程？<ul>
+<li><code>epoll</code> 监听的对象不是 <strong>“网卡中断”</strong>，而是 <strong>“文件描述符上的就绪事件”</strong>；</li>
+<li><code>epoll(7)</code> 的定义就是监视多个 <code>file descriptor</code>，看它们是否可进行 <code>I/O</code>；</li>
+<li>网卡只是让某些 <code>socket fd</code> 进入 <code>ready</code> 状态的一个来源；</li>
+<li>监听 <code>socket</code> 上有新连接可 <code>accept</code>、已连接 <code>socket</code> 上有数据可读、发送缓冲区腾出了空间可写，这些都会表现成 <code>socket fd</code> 的就绪事件；</li>
+</ul>
+</li>
+<li><code>epoll</code> 的监听集合使用红黑树，是出于什么考虑？<ul>
+<li>红黑树是平衡搜索树，查找、插入、删除的复杂度都是稳定的 <code>O(log n)</code>；</li>
+<li>红黑树天然适合这种 <strong>内核里长期维护的一组有序唯一键对象</strong>；</li>
+</ul>
+</li>
+<li>对比 <code>epoll</code>，<code>poll</code> 又是用什么进行监听的呢？<ul>
+<li><code>poll</code> 是让用户态每次传一个 <code>struct pollfd</code> 数组，<code>pollfd</code> 中的每个元素包含 <code>fd</code>&#x2F;<code>events</code>&#x2F;<code>revents</code>；</li>
+<li>用户态会拷贝 <code>pollfd</code> 到 <strong>内核态</strong>，内核收到后会遍历这些 <code>fd</code>，当 <code>fd</code> 就绪后，<code>poll</code> 会逐个调用 <code>fd</code> 的 <code>poll</code> 回调判断是否就绪；</li>
+<li>内核通过 <code>poll_table</code> + <code>wait_queue</code> 把当前线程挂到这些 <code>fd</code> 的等待队列上。如果没有事件就睡眠，被唤醒后再重新扫描，并把结果写回各个 <code>pollfd.revents</code>。</li>
+</ul>
+</li>
+<li>不同的进程可以监听同一个端口吗？<ul>
+<li><code>Linux</code> 上显式使用 <code>SO_REUSEPORT</code>，可以让多个进程&#x2F;线程绑定完全相同的地址和端口。</li>
+<li><code>SO_REUSEPORT</code> 指的是多个 <code>socket</code> 可以同时 <code>bind</code> 到同一个 <code>IP:Port</code>，数据包一路到传输层后，内核根据四元组找到目标 <code>socket</code>；如果目标端口对应的不是单个 <code>socket</code>，而是一组开启了 <code>SO_REUSEPORT</code> 的 <code>socket</code>，那么内核会在这组 <code>socket</code> 之间选一个来接收这个连接或数据包。</li>
+</ul>
+</li>
+<li>结合你讲的从网卡、<code>DMA</code>、硬中断、软中断的方式通知，那么去匹配不同的进程是哪个环节进行的呢？<ul>
+<li><strong>完整链路：</strong> 网卡 → <code>DMA</code> 到内存 → 硬中断 → 通知 <code>CPU</code> → 软中断里跑收包 → 进入 <code>IP/TCP/UDP</code> 协议栈 → 查 <code>socket</code> → 把数据&#x2F;连接挂到这个 <code>socket</code> → 唤醒等这个 <code>socket</code> 的进程&#x2F;线程&#x2F;<code>epoll</code>。</li>
+<li>如果启用了 <code>SO_REUSEPORT</code><ul>
+<li>多个进程都在 <code>listen</code>。</li>
+<li>选中 <code>socket</code> 之后，内核再通过 <code>socket</code> 的等待队列和 <code>epoll</code> 的回调机制，唤醒阻塞在 <code>recv/accept/epoll_wait</code> 上的线程。</li>
+<li>也就是说，内核先匹配 <code>socket</code>，再间接匹配到进程。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>两个线程可以监听同一个端口嘛？（这需要分情况）<ul>
+<li>两个线程共享同一个监听 <code>socket</code>，这个是可以的。<ul>
+<li>一个线程先 <code>socket</code> -&gt; <code>bind</code> -&gt; <code>listen</code>，然后把同一个监听 <code>fd</code> 交给两个线程，它们都可以在这个 <code>fd</code> 上 <code>accept()</code>，这是常见的多线程服务器模型之一。</li>
+<li>传统方式就是 “多个线程竞争同一个 <code>listening</code> <code>socket</code> 上的 <code>accept()</code>”。</li>
+<li><code>accept(2)</code> 也说明了，它只是从这个监听 <code>socket </code>的等待队列里取出一个连接请求，并返回一个新的已连接 <code>socket</code>，原来的监听 <code>socket</code> 不受影响。</li>
+</ul>
+</li>
+<li>两个线程各自创建 <strong>“不同的监听 <code>socket</code>”</strong>，再去绑定同一个 <code>ip:port</code>。默认不行。<ul>
+<li>同一个本地 <code>(ip, port)</code> 一般只能绑定一个 <code>IP socket</code>；</li>
+<li>如果已经有一个 <code>active listening socket</code> 绑定在这个地址上，再绑定通常会失败。</li>
+<li>但如果两个线程各自的 <code>socket</code> 都提前设置了 <code>SO_REUSEPORT</code>，那就可以。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="计网"><a href="#计网" class="headerlink" title="计网"></a>计网</h2><ul>
+<li><code>tcp</code> 三次握手？</li>
+<li><code>tcp</code> 三次握手可以缩短成两步嘛？</li>
+<li>恶意客户端不发送第三次握手，这种情况会造成什么影响呢？</li>
+<li>对已经建立好的连接有影响吗？</li>
+<li>如何解决 <code>SYN Flood</code> 攻击？<ul>
+<li><code>SYN-Cookie</code>：在三次握手完成前尽量不为半连接分配状态，把必要状态编码进 <code>SYN-ACK</code> 的序列号里，等客户端真正回 <code>ACK</code> 再重建连接状态。</li>
+<li>这样即使 <code>SYN</code> 很多，也不容易把半连接状态耗尽。</li>
+</ul>
+</li>
+<li><code>tcp</code> 解决什么问题？有哪些技术手段？</li>
+<li>关于网络阻塞这里，我了解网络的不同层其实都有这些手段，你有了解过吗？想看你这方面是否有了解？<ul>
+<li><strong>数据链路层：</strong> 数据包缓冲队列</li>
+<li><strong>网络层：</strong> <ul>
+<li>路由器和交换机在转发时排队</li>
+<li>主动队列管理 <code>AQM</code></li>
+<li>在包头打标记，让接收方通知发送方降速;</li>
+</ul>
+</li>
+<li><strong>传输层：</strong> 流量控制和拥塞控制</li>
+<li><strong>应用层：</strong> 限流、背压、超时&#x2F;重试&#x2F;退避、消息队列</li>
+</ul>
+</li>
+<li><code>Https</code> 和 <code>Http</code> 的区别？</li>
+<li>引用数字证书为了什么呢？<ul>
+<li>引入数字证书主要是为了解决 <strong>公钥分发中的信任问题</strong>。</li>
+<li>客户端在建立安全连接时，不仅需要拿到服务器的公钥，还需要确认这个公钥确实属于目标服务器。</li>
+<li>数字证书通过 <code>CA</code> 签名把服务器身份和公钥绑定起来，从而实现身份认证，并防止中间人伪造公钥。</li>
+</ul>
+</li>
+</ul>
+<h2 id="MySQL"><a href="#MySQL" class="headerlink" title="MySQL"></a>MySQL</h2><ul>
+<li>介绍 <code>MySQL</code> 有几种 <code>log</code>，对比的进行去描述？<ul>
+<li><strong>回滚日志 <code>undo log</code>：</strong> <code>Innodb</code> 存储引擎层生成的日志，实现了事务中的 <strong>原子性</strong>，主要用于 <strong>事务回滚</strong> 和 <code>MVCC</code>;</li>
+<li><strong>重做日志 <code>redo log</code>：</strong> <code>Innodb</code> 存储引擎层生成的日志，实现了事务中的 <strong>持久性</strong>，主要用于 <strong>故障恢复</strong>;</li>
+<li><strong>归档日志 <code>bin log</code>：</strong>  <code>Server</code> 层生成的日志，主要用于 <strong>数据备份</strong> 和 <strong>主从复制</strong>，事务执行完成后、真正提交前先写 <code>binlog</code>;</li>
+</ul>
+</li>
+<li><code>undo log</code> 和 <code>bin log</code> 的刷盘时机？<ul>
+<li><code>bin log</code>：<ul>
+<li><code>MySQL</code> 提供一个 <code>sync_binlog</code> 参数来控制数据库的 <code>binlog</code> 刷到磁盘上的频率：<ul>
+<li><code>sync_binlog = 0</code> 的时候，表示每次提交事务都只 <code>write</code>，不 <code>fsync</code>，后续交由操作系统决定何时将数据持久化到磁盘；</li>
+<li><code>sync_binlog = 1</code> 的时候，表示每次提交事务都会 <code>write</code>，然后马上执行 <code>fsync</code>；</li>
+<li><code>sync_binlog = N</code> 的时候，表示每次提交事务都 <code>write，</code>但累积 <code>N</code> 个事务后才 <code>fsync</code>。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>undo log</code>：<ul>
+<li><code>undo</code> 先写入内存中的 <code>undo</code> 页；</li>
+<li><code>undo</code> 页修改生成 <code>redo</code>；</li>
+<li>提交时 <code>redo</code> 按规则决定是否刷盘；</li>
+</ul>
+</li>
+<li><code>redo log</code>：<ul>
+<li>通过参数判断 <code>innodb_flush_log_at_trx_commit</code><ul>
+<li><code>0</code>：每次事务提交，将 <code>redo log</code> 留在 <code>redo log buffer</code> 中，该模式下在事务提交时不会主动触发写入磁盘的操作。</li>
+<li><code>1</code>：每次事务提交，都将缓存在 <code>redo log buffer</code> 里的 <code>redo log</code> 直接持久化到磁盘，这样可以保证 <code>MySQL</code> 异常重启之后数据不会丢失。</li>
+<li><code>2</code>：表示每次事务提交时，都只是缓存在 <code>redo log buffer</code> 里的 <code>redo log</code> 写到 <code>redo log</code> 文件，相当于写入到了 <code>PageCache</code>。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>索引的原理？联合索引也是通过 <code>B+</code> 树来承载的嘛，有什么特点嘛？</li>
+<li>联合索引<code>(a,b)</code>？<code>a &gt; 1 and b &gt; 1</code>，很好的利用联合索引嘛？</li>
+<li>别的中间件有一些了解不？比如 <code>Redis</code>，<code>MQ</code>?</li>
+<li>讲一下你对 <code>kafka</code> 的理解？</li>
+<li><code>kafka</code> 怎么保证不丢消息的呢？</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://NeverGYu.github.io">NeverGYu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://nevergyu.github.io/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91/">https://nevergyu.github.io/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://NeverGYu.github.io" target="_blank">GYu的妙妙屋</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/">项目面经</a></div><div class="post-share"><div class="social-share" data-image="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/03/18/%E9%9D%A2%E7%BB%8F/csig_0318_02/" title="面经 csig_0318"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">面经 csig_0318</div></div><div class="info-2"><div class="info-item-1">面经 多态在编程中起什么作用？（对同一个接口，进行不同的实现）  数据库 ACID 是什么？（原子性、一致性、隔离性、持久性）  数据库的隔离级别分别有哪些？分别会出现哪些问题？（读未提交、读提交、可重复读、串行化）  TCP 和 UDP 的区别？  TCP 是可靠的、面向连接的、基于字节流的传输层协议； UDP 是不可靠的、无连接的、基于报文的传输层协议；   UDP 不可靠，为什么还要用？  正是因为 不可靠，所以带来了很多的优点：更快、更轻、更灵活；   HTTPS 证书伪造的可能性？（HTTPS 证书理论上不是不能被伪造，但直接伪造一个被浏览器信任的证书非常难，因为需要受信任 CA 的签名）  B树 和 B+树 的区别？  B+ 树的非叶子节点不存放数据，只存放索引，支持在叶子节点层进行范围查询； 由于 B+ 树的非叶子节点只存放索引项，不存放数据，因此可以一个磁盘页可以存放更多的索引项，导致 B+ 树的高度不高，因此每次访问叶子节点的时候，需要对的磁盘 IO 更少；   服务器会不会存在 ping 得通，但是 tcp 无法连接得状况？  ping 用的是...</div></div></div></a><a class="pagination-related" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91/" title="csig_腾讯视频 (一面凉经)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">csig_腾讯视频 (一面凉经)</div></div><div class="info-2"><div class="info-item-1">面试问题 有没有实际上有用户使用这个 vpn，插件是不是只是把客户端上报的数据存储起来？是线上的业务嘛？ 第一版，确实有用户在使用； 插件 不只是一个只做客户端上报存储的插件，而是一个和 客户端 进行通信的 服务端控制组件； 插件至少做了三类实质工作： 在 OpenVPN 的 TLS_VERIFY 阶段调用平台的 CertStatus 做证书状态校验； 拉取 UserAccessRules，再用 nftables 下发用户级访问控制； 通过 UserConnection 上报连接状态，并通过 PluginMsgPipe 接收动态规则更新； 拥有 流量解析 和 Kafka 投递能力，这已经不是单纯埋点了；     grpc 同步和异步通信框架怎么去实现的？原来是什么样的？提升了什么性能？ 同步 RPC 主要用在必须马上拿结果的链路上，这些请求如果不马上返回，后续流程就走不下去； 异步 RPC 主要用在不应该阻塞 OpenVPN 主线程的地方，比如 用户访问规则拉取 和 连接状态上报。 双向流主要用在 长生命周期 控制通道上； 托管节点和平台之间是...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91/" title="csig_腾讯视频 (一面凉经)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-23</div><div class="info-item-2">csig_腾讯视频 (一面凉经)</div></div><div class="info-2"><div class="info-item-1">面试问题 有没有实际上有用户使用这个 vpn，插件是不是只是把客户端上报的数据存储起来？是线上的业务嘛？ 第一版，确实有用户在使用； 插件 不只是一个只做客户端上报存储的插件，而是一个和 客户端 进行通信的 服务端控制组件； 插件至少做了三类实质工作： 在 OpenVPN 的 TLS_VERIFY 阶段调用平台的 CertStatus 做证书状态校验； 拉取 UserAccessRules，再用 nftables 下发用户级访问控制； 通过 UserConnection 上报连接状态，并通过 PluginMsgPipe 接收动态规则更新； 拥有 流量解析 和 Kafka 投递能力，这已经不是单纯埋点了；     grpc 同步和异步通信框架怎么去实现的？原来是什么样的？提升了什么性能？ 同步 RPC 主要用在必须马上拿结果的链路上，这些请求如果不马上返回，后续流程就走不下去； 异步 RPC 主要用在不应该阻塞 OpenVPN 主线程的地方，比如 用户访问规则拉取 和 连接状态上报。 双向流主要用在 长生命周期 控制通道上； 托管节点和平台之间是...</div></div></div></a><a class="pagination-related" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/%E9%9D%96%E5%AE%89%E7%A7%91%E6%8A%80/" title="靖安科技 (一面)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-23</div><div class="info-item-2">靖安科技 (一面)</div></div><div class="info-2"><div class="info-item-1">面试 用户鉴权 用的什么进行鉴权？鉴权方式是什么？证书鉴权的方式是什么？  两段式鉴权 业务登录鉴权：发生于 SDK 与 管理平台 之间  SDK 用 用户名&#x2F;密码 + optional TOTP 调 SDKAuth，用于确认 “这个人是不是合法用户”。 SDK 登录成功后，平台会下发 ca&#x2F; cert &#x2F;key&#x2F; server[]，客户端再用这些材料去建立 OpenVPN 实例去建立连接。   VPN 接入鉴权：发生于 OpenVPN 插件与 管理平台 之间  到了服务端，插件在 TLS_VERIFY 阶段取客户端证书的 **序列号 SN 和 CN**，再调用同步 RPC 方法 CertStatus 查询这个证书当前是不是有效、属于哪个实体、对应哪个用户。     所以插件做的主鉴权不是用户名&#x2F;密码，而是： mTLS 握手 远端证书状态校验。     证书里面的内容是什么？基于什么的呢？  这套系统底层是基于 X.509 证书 + PKI/CA 体系 的 OpenVPN 双向 TLS。 插件实际会读取证书里的 CN 和...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">NeverGYu</div><div class="author-info-description">纵使困顿难行，亦当砥砺奋进</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">56</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/NeverGYu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/NeverGYu" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is GYu Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%9D%A2%E7%BB%8F"><span class="toc-number">1.</span> <span class="toc-text">面经</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E5%85%AB%E8%82%A1"><span class="toc-number">1.1.</span> <span class="toc-text">C++ 八股</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A1%B9%E7%9B%AE"><span class="toc-number">1.2.</span> <span class="toc-text">项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%A1%E7%BD%91"><span class="toc-number">1.3.</span> <span class="toc-text">计网</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MySQL"><span class="toc-number">1.4.</span> <span class="toc-text">MySQL</span></a></li></ol></li></ol></div></div><div class="card-widget card-post-series"><div class="item-headline"><i class="fa-solid fa-layer-group"></i><span>系列文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91/" title="csig_腾讯云(一面)">csig_腾讯云(一面)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91/" title="csig_腾讯视频 (一面凉经)">csig_腾讯视频 (一面凉经)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/%E9%9D%96%E5%AE%89%E7%A7%91%E6%8A%80/" title="靖安科技 (一面)">靖安科技 (一面)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/25/%E9%9D%A2%E7%BB%8F/%E5%BF%AB%E6%89%8B_01/" title="面经（快手_01）">面经（快手_01）</a><time datetime="2026-03-25T02:00:00.000Z" title="发表于 2026-03-25 10:00:00">2026-03-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91/" title="csig_腾讯云(一面)">csig_腾讯云(一面)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91/" title="csig_腾讯视频 (一面凉经)">csig_腾讯视频 (一面凉经)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/23/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/%E9%9D%96%E5%AE%89%E7%A7%91%E6%8A%80/" title="靖安科技 (一面)">靖安科技 (一面)</a><time datetime="2026-03-23T04:00:00.000Z" title="发表于 2026-03-23 12:00:00">2026-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/18/%E9%9D%A2%E7%BB%8F/csig_0318/" title="面经 csig_0318">面经 csig_0318</a><time datetime="2026-03-18T02:00:00.000Z" title="发表于 2026-03-18 10:00:00">2026-03-18</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By NeverGYu</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script src="/styles/fish.js"></script><div class="aplayer no-destroy" data-id="2670158166" data-server="netease" data-type="song" data-fixed="true" data-autoplay="`true`"> </div><script defer="defer" id="fluttering_ribbon" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script id="click-heart" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-heart.min.js" async="async" mobile="false"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script>(() => {
+  const destroyAplayer = () => {
+    if (window.aplayers) {
+      for (let i = 0; i < window.aplayers.length; i++) {
+        if (!window.aplayers[i].options.fixed) {
+          window.aplayers[i].destroy()
+        }
+      }
+    }
+  }
+
+  const runMetingJS = () => {
+    typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+  }
+
+  btf.addGlobalFn('pjaxSend', destroyAplayer, 'destroyAplayer')
+  btf.addGlobalFn('pjaxComplete', loadMeting, 'runMetingJS')
+})()</script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => fn())
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false 
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
