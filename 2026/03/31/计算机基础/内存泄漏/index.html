@@ -1,0 +1,412 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>内存泄漏 | GYu的妙妙屋</title><meta name="author" content="NeverGYu"><meta name="copyright" content="NeverGYu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="内存泄露1️⃣ 什么是内存泄漏？&emsp;&emsp;在 C++ 中，内存泄漏 指的是程序通过 new、malloc 等方式向 堆区 申请了内存，却在不再需要时 没有及时释放，或者由于 指针丢失、异常中断、所有权管理混乱 等原因，导致这块内存再也无法被程序有效访问和回收。 2️⃣ 内存泄漏的危害 性能退化： 泄漏内存会持续占用物理内存，当物理内存不足时，系统会启用 swap 分区，磁盘 IO 速">
+<meta property="og:type" content="article">
+<meta property="og:title" content="内存泄漏">
+<meta property="og:url" content="https://nevergyu.github.io/2026/03/31/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/index.html">
+<meta property="og:site_name" content="GYu的妙妙屋">
+<meta property="og:description" content="内存泄露1️⃣ 什么是内存泄漏？&emsp;&emsp;在 C++ 中，内存泄漏 指的是程序通过 new、malloc 等方式向 堆区 申请了内存，却在不再需要时 没有及时释放，或者由于 指针丢失、异常中断、所有权管理混乱 等原因，导致这块内存再也无法被程序有效访问和回收。 2️⃣ 内存泄漏的危害 性能退化： 泄漏内存会持续占用物理内存，当物理内存不足时，系统会启用 swap 分区，磁盘 IO 速">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png">
+<meta property="article:published_time" content="2026-03-31T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-03-31T13:20:58.715Z">
+<meta property="article:author" content="NeverGYu">
+<meta property="article:tag" content="内存泄漏">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "内存泄漏",
+  "url": "https://nevergyu.github.io/2026/03/31/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/",
+  "image": "https://nevergyu.github.io/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png",
+  "datePublished": "2026-03-31T04:00:00.000Z",
+  "dateModified": "2026-03-31T13:20:58.715Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "NeverGYu",
+      "url": "https://nevergyu.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/image/%E9%AA%B7%E9%AB%85%E9%AD%94%E6%9C%AF%E5%B8%88.png"><link rel="canonical" href="https://nevergyu.github.io/2026/03/31/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '内存泄漏',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/styles/main.css"><script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load', preloader.endLoading)
+
+  if (true) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">59</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">39</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/我妻善意.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" alt="Logo"><span class="site-name">GYu的妙妙屋</span></a><a class="nav-page-title" href="/"><span class="site-name">内存泄漏</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">内存泄漏</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-31T04:00:00.000Z" title="发表于 2026-03-31 12:00:00">2026-03-31</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-31T13:20:58.715Z" title="更新于 2026-03-31 21:20:58">2026-03-31</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/">内存泄漏</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="内存泄露"><a href="#内存泄露" class="headerlink" title="内存泄露"></a>内存泄露</h1><h2 id="1️⃣-什么是内存泄漏？"><a href="#1️⃣-什么是内存泄漏？" class="headerlink" title="1️⃣ 什么是内存泄漏？"></a>1️⃣ 什么是内存泄漏？</h2><p>&emsp;&emsp;在 <code>C++</code> 中，<strong>内存泄漏</strong> 指的是程序通过 <code>new</code>、<code>malloc</code> 等方式向 <strong>堆区</strong> 申请了内存，却在不再需要时 <strong>没有及时释放</strong>，或者由于 <strong>指针丢失</strong>、<strong>异常中断</strong>、<strong>所有权管理混乱</strong> 等原因，导致这块内存再也无法被程序有效访问和回收。</p>
+<h2 id="2️⃣-内存泄漏的危害"><a href="#2️⃣-内存泄漏的危害" class="headerlink" title="2️⃣ 内存泄漏的危害"></a>2️⃣ 内存泄漏的危害</h2><ul>
+<li><strong>性能退化：</strong> <strong>泄漏内存会持续占用物理内存</strong>，当物理内存不足时，系统会启用 <code>swap</code> 分区，磁盘 <code>IO</code> 速度远低于内存，导致程序响应变慢、<code>CPU</code> 等待时间增加。</li>
+<li><strong>程序崩溃：</strong> <strong>泄漏内存耗尽系统可用内存（包括 <code>swap</code>）时</strong>，操作系统会触发 <strong>“内存溢出（<code>OOM</code>）”</strong>，强制终止占用内存最多的进程。</li>
+<li><strong>资源耗尽：</strong> 对于长期运行的服务（如服务器程序），泄漏会持续累积，可能导致服务在运行一段时间后突然宕机，且难以复现根因。</li>
+</ul>
+<h2 id="3️⃣-内存泄漏的分类"><a href="#3️⃣-内存泄漏的分类" class="headerlink" title="3️⃣ 内存泄漏的分类"></a>3️⃣ 内存泄漏的分类</h2><p>&emsp;&emsp; 对于 <code>Valgrind</code> 来说，其主要将 <strong>内存泄漏</strong> 分为四类：</p>
+<ul>
+<li><code>Definitely Lost</code>：<ul>
+<li><strong>定义：</strong> 没有指针 <code>p</code> 可以指向一块已经分配的堆内存，<code>100%</code> 确定为泄漏；</li>
+</ul>
+</li>
+<li><code>Indirectly Lost</code>：<ul>
+<li><strong>定义：</strong> 子对象本身没有直接丢失指针，但由于父对象已泄漏，导致它也随之不可访问；</li>
+</ul>
+</li>
+<li><code>Possibly Lost</code>：<ul>
+<li><strong>定义：</strong> <strong>模糊指针引用</strong>，比如 <code>p</code> 一开始指向堆区的开头，但是之后对 <code>p</code> 进行了移动，<code>p</code> 指向内存中间位置；</li>
+</ul>
+</li>
+<li><code>Still Reachable</code>：<ul>
+<li><strong>定义：</strong> 程序在运行过程中申请了一块堆内存，并始终由 <strong>全局指针</strong> 或 <strong>静态指针</strong> 保存其地址。</li>
+</ul>
+</li>
+</ul>
+<h2 id="4️⃣-内存泄漏和内存溢出的区别"><a href="#4️⃣-内存泄漏和内存溢出的区别" class="headerlink" title="4️⃣ 内存泄漏和内存溢出的区别"></a>4️⃣ 内存泄漏和内存溢出的区别</h2><table>
+<thead>
+<tr>
+<th>对比维度</th>
+<th>内存泄漏（Memory Leak）</th>
+<th>内存溢出（Out Of Memory, OOM）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>触发条件</td>
+<td>长期运行中内存渐进累积，无立即风险</td>
+<td>单次内存分配超过系统可用内存</td>
+</tr>
+<tr>
+<td>表现形式</td>
+<td>程序运行越久，内存占用越高，最终可能引发 <code>OOM</code></td>
+<td>立即崩溃，报错 <code>Cannot allocate memory</code> 或被 OS 杀死</td>
+</tr>
+<tr>
+<td>根因</td>
+<td>内存未释放（如 <code>new</code> 后无 <code>delete</code>、循环引用）</td>
+<td>内存分配需求超过系统上限（如数组过大申请、数据量过大）</td>
+</tr>
+<tr>
+<td>解决方向</td>
+<td>排查未释放的内存分配点，修复释放逻辑</td>
+<td>优化内存分配方式（如分块分配、减少单次申请量）</td>
+</tr>
+</tbody></table>
+<h2 id="5️⃣-常见原因"><a href="#5️⃣-常见原因" class="headerlink" title="5️⃣ 常见原因"></a>5️⃣ 常见原因</h2><ul>
+<li><p><strong><code>new</code>&#x2F;<code>delete</code> 不匹配</strong></p>
+<ul>
+<li><p><strong>方式：</strong> <code>new []</code> 分配内存，用 <code>delete</code> 释放</p>
+</li>
+<li><p><strong>根因：</strong> </p>
+<ul>
+<li><code>new[]</code> 会在堆内存头部存储 <strong>“数组元素个数”</strong>；</li>
+<li><code>delete[]</code> 会读取该值并释放所有元素；</li>
+<li><code>delete</code> 会忽略该信息，仅释放指针指向的单个对象，导致数组剩余元素泄漏。</li>
+</ul>
+</li>
+<li><p><strong>案例</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">int</span>* arr = <span class="keyword">new</span> <span class="type">int</span>[<span class="number">10</span>]; <span class="comment">// 分配数组，内存中会存储数组大小（供delete[]使用）</span></span><br><span class="line">    <span class="keyword">delete</span> arr; <span class="comment">// 错误：用delete释放数组，仅释放第一个元素，其余9个元素泄漏</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p><strong>异常处理引发的泄漏</strong></p>
+<ul>
+<li><p><strong>根因：</strong> <strong>异常抛出时</strong>，程序会跳过当前函数的后续代码（包括<strong>资源释放逻辑</strong>），若未用 <code>RAII</code> 保护资源，会直接导致泄漏。</p>
+</li>
+<li><p><strong>案例</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">leakOnException</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">int</span>* data = <span class="keyword">new</span> <span class="type">int</span>[<span class="number">100</span>];</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 模拟异常抛出（如文件打开失败、网络错误）</span></span><br><span class="line">        <span class="keyword">throw</span> std::<span class="built_in">runtime_error</span>(<span class="string">&quot;error&quot;</span>); </span><br><span class="line">        <span class="comment">// 异常抛出后，以下 delete 永远不会执行</span></span><br><span class="line">        <span class="keyword">delete</span>[] data; </span><br><span class="line">    &#125; <span class="built_in">catch</span> (...) &#123;</span><br><span class="line">        <span class="comment">// 未处理 data 的释放，直接重新抛出</span></span><br><span class="line">        <span class="keyword">throw</span>; </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p><strong>智能指针使用陷阱</strong></p>
+<ul>
+<li><strong>根因：</strong> <ul>
+<li><code>shared_ptr</code> 循环引用，直接导致内存泄漏；</li>
+<li><code>weak_ptr</code> 未调用 <code>expired()</code> 来检查 <code>shared_ptr</code> 是否存在，而是直接将 <code>weak_ptr</code> 通过 <code>lock()</code> 直接返回，并将返回的结果直接解引用，使得直接崩溃； </li>
+<li><code>shared_ptr</code> 初始化陷阱，使用多个 <code>shared_ptr</code> 直接管理同一个对象，使其进行 <code>double free</code>；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong><code>STL</code> 容器与指针的隐患</strong></p>
+<ul>
+<li><strong>根因：</strong><ul>
+<li><code>STL</code> 容器存储了 <strong>指向堆内存的指针</strong>，但是 <strong>未遍历释放</strong>；</li>
+<li><code>STL</code> 容器保存了 <strong>动态数组</strong>；</li>
+<li><code>STL</code> 临时容器保存 <strong>指针</strong>；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>全局&#x2F;静态变量泄漏</strong></p>
+<ul>
+<li><strong>根因：</strong><ul>
+<li><strong>全局变量&#x2F;静态变量</strong> 的生命周期与程序一致，若其内部持有 <strong>动态资源</strong>（如指针、容器），程序退出前未清理，会导致泄漏（工具通常标记为 <code>Still Reachable</code>）</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="6️⃣-排查手段"><a href="#6️⃣-排查手段" class="headerlink" title="6️⃣ 排查手段"></a>6️⃣ 排查手段</h2><p>&emsp;&emsp;面对复杂的泄漏场景，手动排查几乎不可能，需依赖专业工具。</p>
+<h3 id="1️⃣-Valgrind"><a href="#1️⃣-Valgrind" class="headerlink" title="1️⃣ Valgrind"></a>1️⃣ <code>Valgrind</code></h3><p>&emsp;&emsp;<code>Valgrind</code> 是 <code>Linux</code> 下最经典的内存调试工具，核心组件 <code>memcheck</code> 可检测 <strong>内存泄漏</strong>、<strong>越界访问</strong>、<strong>双重释放</strong> 等问题，精度极高。</p>
+<h4 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h4><p>&emsp;&emsp;<code>Valgrind</code> 并非直接运行程序，而是将程序翻译成 <strong>“中间代码”</strong>，在模拟 <code>CPU</code> 环境中执行。<br>&emsp;&emsp;通过跟踪每一块堆内存的 <strong>“分配记录”</strong>（分配地址、大小、调用栈）和 <strong>“引用状态”</strong>（是否有指针指向），在程序退出时对比 <strong>“已分配未释放”</strong> 的内存，确定泄漏类型和位置。</p>
+<h4 id="常用参数详解"><a href="#常用参数详解" class="headerlink" title="常用参数详解"></a>常用参数详解</h4><ul>
+<li><p><code>--leak-check=full</code>：</p>
+<ul>
+<li><strong>作用：</strong> 开启完整泄漏检测；</li>
+<li><strong>示例：</strong> 排查生产环境泄漏时，需用 <code>valgrind --leak-check=full ./program</code></li>
+</ul>
+</li>
+<li><p><code>--log-file=leak.log</code>：</p>
+<ul>
+<li><strong>作用：</strong> 将检测报告输出到文件，避免终端刷屏，便于后续分析；</li>
+<li><strong>示例：</strong> 长时间运行程序时，用 <code>--log-file=leak.log</code> 保存报告；</li>
+</ul>
+</li>
+<li><p><code>--track-threads=yes</code> </p>
+<ul>
+<li><strong>作用：</strong> 跟踪线程创建与销毁，关联线程 <code>ID</code> 与内存分配（多线程场景必备）；</li>
+<li><strong>示例：</strong> 排查多线程泄漏时，加此参数：<code>--track-threads=yes</code>；</li>
+</ul>
+</li>
+</ul>
+<h4 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h4><ul>
+<li><strong>优点：</strong> 精度极高、支持多线程、无需修改代码；</li>
+<li><strong>缺点：</strong> 性能损耗大（程序运行速度降低 <code>10~50</code> 倍）、内存开销高（需额外占用 <code>2~3</code> 倍内存），不适合生产环境实时检测。</li>
+</ul>
+<h4 id="建议"><a href="#建议" class="headerlink" title="建议"></a>建议</h4><p>&emsp;&emsp;用 <code>Valgrind</code> 运行优化后的程序（<code>-O2/-O3</code>）：优化会导致代码重排，调用栈信息不准确，建议用 <code>-O0</code> 编译。</p>
+<h3 id="2️⃣-AddressSanitizer"><a href="#2️⃣-AddressSanitizer" class="headerlink" title="2️⃣ AddressSanitizer"></a>2️⃣ <code>AddressSanitizer</code></h3><p>&emsp;&emsp;<code>ASan</code> 是 <code>Google</code> 开发的内存错误检测工具，集成在 <code>GCC/Clang</code> 中，相比 <code>Valgrind</code> 速度更快，适合开发调试阶段使用。</p>
+<h4 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h4><p>&emsp;&emsp;<code>ASan</code> 的核心是 <strong>“影子内存”</strong>（<code>Shadow Memory</code>）：</p>
+<ul>
+<li>将程序的每 <code>8</code> 字节内存映射为 <code>1</code> 字节影子内存，用于标记 <strong>“内存是否可访问”</strong>（如已分配、已释放、越界）。</li>
+<li><code>ASan</code> 在编译阶段对内存访问代码（<code>load/store</code>）进行 <strong>“插桩”</strong>，每次访问内存前先检查影子内存状态，若非法则触发错误报告。</li>
+</ul>
+<p><code>ASan</code> 会在程序退出时扫描所有堆内存，对比 <strong>“已分配未释放”</strong> 的块，生成 <strong>泄漏报告</strong>。</p>
+<h4 id="使用流程"><a href="#使用流程" class="headerlink" title="使用流程"></a>使用流程</h4><ul>
+<li><strong>编译阶段：</strong> 添加 <code>-fsanitize=address -g</code> 选项</li>
+<li><strong>链接阶段：</strong> 若需静态链接 <code>ASan</code>（避免依赖系统 <code>ASan</code> 库），加 <code>-static-libasan</code></li>
+<li><strong>运行阶段：</strong> 设置环境变量 <code>ASAN_OPTIONS</code> 配置检测行为；</li>
+</ul>
+<h4 id="优缺点-1"><a href="#优缺点-1" class="headerlink" title="优缺点"></a>优缺点</h4><ul>
+<li><strong>优点：</strong> <ul>
+<li>速度快（仅比正常程序慢 2~5 倍）</li>
+<li>内存开销可控（额外占用 2~3 倍内存）</li>
+<li>支持多线程，适合开发调试；</li>
+</ul>
+</li>
+<li><strong>缺点：</strong><ul>
+<li>不支持区分泄漏类型</li>
+<li>部分场景存在误报</li>
+</ul>
+</li>
+</ul>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/fb5oBILz3nKwMXu5LaKucg">C++ 内存泄露如何排查：从原理到实战</a></li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://NeverGYu.github.io">NeverGYu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://nevergyu.github.io/2026/03/31/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/">https://nevergyu.github.io/2026/03/31/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://NeverGYu.github.io" target="_blank">GYu的妙妙屋</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/">内存泄漏</a></div><div class="post-share"><div class="social-share" data-image="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/03/30/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91(%E4%BA%8C%E9%9D%A2%E5%87%89%E7%BB%8F)/" title="csig_腾讯云(二面凉经)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">csig_腾讯云(二面凉经)</div></div><div class="info-2"><div class="info-item-1">面经</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/%E6%AD%BB%E7%A5%9E%E9%95%B0%E5%88%80.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">NeverGYu</div><div class="author-info-description">纵使困顿难行，亦当砥砺奋进</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">59</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">39</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/NeverGYu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/NeverGYu" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is GYu Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2"><span class="toc-number">1.</span> <span class="toc-text">内存泄露</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1%EF%B8%8F%E2%83%A3-%E4%BB%80%E4%B9%88%E6%98%AF%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%EF%BC%9F"><span class="toc-number">1.1.</span> <span class="toc-text">1️⃣ 什么是内存泄漏？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2%EF%B8%8F%E2%83%A3-%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E7%9A%84%E5%8D%B1%E5%AE%B3"><span class="toc-number">1.2.</span> <span class="toc-text">2️⃣ 内存泄漏的危害</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3%EF%B8%8F%E2%83%A3-%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E7%9A%84%E5%88%86%E7%B1%BB"><span class="toc-number">1.3.</span> <span class="toc-text">3️⃣ 内存泄漏的分类</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4%EF%B8%8F%E2%83%A3-%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E5%92%8C%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.4.</span> <span class="toc-text">4️⃣ 内存泄漏和内存溢出的区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5%EF%B8%8F%E2%83%A3-%E5%B8%B8%E8%A7%81%E5%8E%9F%E5%9B%A0"><span class="toc-number">1.5.</span> <span class="toc-text">5️⃣ 常见原因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6%EF%B8%8F%E2%83%A3-%E6%8E%92%E6%9F%A5%E6%89%8B%E6%AE%B5"><span class="toc-number">1.6.</span> <span class="toc-text">6️⃣ 排查手段</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%EF%B8%8F%E2%83%A3-Valgrind"><span class="toc-number">1.6.1.</span> <span class="toc-text">1️⃣ Valgrind</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8E%9F%E7%90%86"><span class="toc-number">1.6.1.1.</span> <span class="toc-text">原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B8%B8%E7%94%A8%E5%8F%82%E6%95%B0%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.6.1.2.</span> <span class="toc-text">常用参数详解</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="toc-number">1.6.1.3.</span> <span class="toc-text">优缺点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BB%BA%E8%AE%AE"><span class="toc-number">1.6.1.4.</span> <span class="toc-text">建议</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%EF%B8%8F%E2%83%A3-AddressSanitizer"><span class="toc-number">1.6.2.</span> <span class="toc-text">2️⃣ AddressSanitizer</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8E%9F%E7%90%86-1"><span class="toc-number">1.6.2.1.</span> <span class="toc-text">原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%B5%81%E7%A8%8B"><span class="toc-number">1.6.2.2.</span> <span class="toc-text">使用流程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9-1"><span class="toc-number">1.6.2.3.</span> <span class="toc-text">优缺点</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="toc-number">2.</span> <span class="toc-text">参考文章</span></a></li></ol></div></div><div class="card-widget card-post-series"><div class="item-headline"><i class="fa-solid fa-layer-group"></i><span>系列文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/31/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/" title="内存泄漏">内存泄漏</a><time datetime="2026-03-31T04:00:00.000Z" title="发表于 2026-03-31 12:00:00">2026-03-31</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/IO%20%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" title="IO 多路复用">IO 多路复用</a><time datetime="2026-03-07T02:00:00.000Z" title="发表于 2026-03-07 10:00:00">2026-03-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E9%9B%B6%E6%8B%B7%E8%B4%9D/" title="零拷贝">零拷贝</a><time datetime="2026-03-07T02:00:00.000Z" title="发表于 2026-03-07 10:00:00">2026-03-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/05/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E8%BF%9B%E7%A8%8B%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" title="进程虚拟内存管理">进程虚拟内存管理</a><time datetime="2026-03-05T02:00:00.000Z" title="发表于 2026-03-05 10:00:00">2026-03-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/01/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E4%BA%86%E8%A7%A3%20Linux%20%E9%98%B2%E7%81%AB%E5%A2%99/" title="了解 Linux 防火墙">了解 Linux 防火墙</a><time datetime="2026-03-01T02:00:00.000Z" title="发表于 2026-03-01 10:00:00">2026-03-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/04/20/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E9%93%BE%E6%8E%A5/" title="链接(link)">链接(link)</a><time datetime="2025-04-20T02:00:00.000Z" title="发表于 2025-04-20 10:00:00">2025-04-20</time></div></div></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/31/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/" title="内存泄漏">内存泄漏</a><time datetime="2026-03-31T04:00:00.000Z" title="发表于 2026-03-31 12:00:00">2026-03-31</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/30/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91(%E4%BA%8C%E9%9D%A2%E5%87%89%E7%BB%8F)/" title="csig_腾讯云(二面凉经)">csig_腾讯云(二面凉经)</a><time datetime="2026-03-30T04:00:00.000Z" title="发表于 2026-03-30 12:00:00">2026-03-30</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/29/%E6%B5%8B%E8%AF%95/%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95/" title="服务器压力测试">服务器压力测试</a><time datetime="2026-03-29T04:00:00.000Z" title="发表于 2026-03-29 12:00:00">2026-03-29</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/26/%E9%A1%B9%E7%9B%AE%E9%9D%A2%E7%BB%8F/csig_%E8%85%BE%E8%AE%AF%E4%BA%91/" title="csig_腾讯云(一面)">csig_腾讯云(一面)</a><time datetime="2026-03-26T04:00:00.000Z" title="发表于 2026-03-26 12:00:00">2026-03-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/25/%E9%9D%A2%E7%BB%8F/%E5%BF%AB%E6%89%8B_01/" title="面经（快手_01）">面经（快手_01）</a><time datetime="2026-03-25T02:00:00.000Z" title="发表于 2026-03-25 10:00:00">2026-03-25</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By NeverGYu</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script src="/styles/fish.js"></script><div class="aplayer no-destroy" data-id="2670158166" data-server="netease" data-type="song" data-fixed="true" data-autoplay="`true`"> </div><script defer="defer" id="fluttering_ribbon" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script id="click-heart" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-heart.min.js" async="async" mobile="false"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script>(() => {
+  const destroyAplayer = () => {
+    if (window.aplayers) {
+      for (let i = 0; i < window.aplayers.length; i++) {
+        if (!window.aplayers[i].options.fixed) {
+          window.aplayers[i].destroy()
+        }
+      }
+    }
+  }
+
+  const runMetingJS = () => {
+    typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+  }
+
+  btf.addGlobalFn('pjaxSend', destroyAplayer, 'destroyAplayer')
+  btf.addGlobalFn('pjaxComplete', loadMeting, 'runMetingJS')
+})()</script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => fn())
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false 
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
